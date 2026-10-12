@@ -1,16 +1,16 @@
-# CLAUDE.md — TasteNet
+# CLAUDE.md — Tastelet
 
 Instructions for Claude when working in this repo. Read fully before every task.
 
 ## What this project is
-TasteNet: a movie recommender web app (AI course term project, built solo by Billy).
+Tastelet: a movie recommender web app (AI course term project, built solo by Billy).
 The user picks 5–10 favorite movies → the app returns a taste persona, a favorite-genre
 sentence and 10–20 recommended movies with match scores. No accounts, no database.
 
-Sources of truth (in the parent folder `D:\RSU\AI\`):
-- `Movie Recommender Project Scope & Specification.pdf` — features F1–F6, API, non-functional requirements
-- `Implementation Plan Movie Recommender.pdf` — Phases 1–9, done-when checks
-- `Tastelet Project Proposal.pdf` — proposal deck (the app was renamed Tastelet → TasteNet)
+Sources of truth (in `docs/`):
+- `docs/scope-and-specification.pdf` — features F1–F6, API, non-functional requirements
+- `docs/implementation-plan.pdf` — setup + Phases 1–9, done-when checks
+- `docs/project-proposal.pdf` — proposal deck
 
 Scope is frozen. New ideas go to a "Later" list in an issue, never into the build.
 
@@ -50,7 +50,8 @@ backend/
   artifacts/       # ncf_model.pt, centroids.json, personas.json, movies_meta.json (committed)
   tests/
 frontend/          # Vite + React (remove .gitkeep before `npm create vite`)
-docs/adr/          # architecture decision records
+docs/              # spec, plan, proposal PDFs
+  adr/             # architecture decision records
 docs/devlog.md     # short note per session
 ```
 Layer rule: api → services → repositories. Never skip a layer or import upward.
