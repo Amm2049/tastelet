@@ -1,0 +1,4 @@
+model,rmse,hit_at_10
+global_mean,1.0334,
+popularity,,0.3856
+item_knn,0.8582,0.5441
