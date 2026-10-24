@@ -59,7 +59,9 @@ Layer rule: api → services → repositories. Never skip a layer or import upwa
 ## Fixed technical decisions (from the spec — don't change without an ADR)
 - MovieLens ml-latest-small; IDs re-indexed 0..N-1; 80/10/10 split.
 - Random seed **42** everywhere (numpy, torch, sklearn, K-means, fold-in negative sampling).
-- NCF in PyTorch: embeddings dim 32 → concat → MLP 64 → 32 → 1, ReLU, dropout 0.2; MSE, Adam.
+- NCF in PyTorch: embeddings dim 32 → concat → MLP 64 → 32 → 1, ReLU, dropout 0.2; MSE, Adam (lr 1e-2).
+- Two NCF models (ADR 0001): rating model (real ratings) for RMSE; ranking model
+  (+4 sampled negatives per rating, label 0.5) for Hit@10 and serving as `ncf_model.pt`.
 - Cold start: freeze weights, optimize one user vector (~100 steps), picks = 5.0, plus random negatives.
 - Personas: K-means (K 6–12, ~8) on L2-normalized user embeddings; nearest centroid at runtime.
 - Endpoints: `GET /movies`, `POST /recommend` (`movie_ids`: 5–10 ints), `GET /health`.
@@ -95,7 +97,8 @@ Layer rule: api → services → repositories. Never skip a layer or import upwa
   (no picks in output, 10–20 results, deterministic).
 - Integration tests with FastAPI `TestClient` for all three endpoints, including 422 cases.
 - Frontend: Vitest for logic (pick limits), Playwright later for the full flow.
-- Model quality: `results.csv` must show NCF beating popularity on RMSE and Hit@10.
+- Model quality: `results.csv` must show NCF beating popularity on RMSE (vs movie-mean 0.9505)
+  and Hit@10.
 
 ## Definition of done (per step/issue)
 - [ ] Acceptance criteria / phase done-when check met
