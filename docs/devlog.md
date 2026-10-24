@@ -2,6 +2,16 @@
 
 One entry per work session: yesterday / today / blockers. Newest first.
 
+## 2026-10-24
+- Yesterday: tuned NCF (lr 1e-2 best); found Hit@10 0.106, far below popularity; wrote negative sampling.
+- Today: negatives fixed ranking but broke RMSE, so we now train two models (ADR 0001). Ranking model with 4 negatives: Hit@10 0.407. Phase 3 done: notebook, results.csv, loss curve, ADR, report notes.
+- Learned: a notebook in the repo must pass Run all; and Colab results shift a little between sessions, so commit numbers from a single final run and compute them in code, never type them in.
+- Blockers: `ncf_model.pt` is on Drive only; copy into `backend/artifacts/` in Phase 6.
+
+## 2026-10-23
+- Today: opened issue #8; Dataset, NCF model, training loop, tuning, test evaluation, negative sampling.
+- Blockers: none.
+
 ## 2026-10-19
 - Yesterday: popularity baseline done.
 - Today: item-KNN — RMSE 0.8582, Hit@10 0.544, best baseline so far. Wrote results.csv and committed the notebook.
