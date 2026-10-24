@@ -2,3 +2,5 @@ model,rmse,hit_at_10
 global_mean,1.0334,
 popularity,,0.3856
 item_knn,0.8582,0.5441
+ncf_rating,0.8662,0.1063
+ncf_ranking_4neg,,0.4072
