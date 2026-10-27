@@ -61,3 +61,31 @@ Hit@10 is a tie within seed noise (one seed alone moves it by ±0.04), but lists
 **Lesson.** Hit@10 alone did not reveal the problem: a model that mostly recommends popular movies scores well on it. A hand-made sanity check plus a simple "how similar are different users' lists" metric caught it.
 
 **Limitations.** Horror recommendations are still weak (3 of 20 horror films), probably because classic horror films have few ratings. Popular negatives also include some movies a user would like but has not rated yet.
+
+## Cold-start fold-in (Phase 4)
+
+**Method.** A new user is not in the trained model, so we freeze all model weights and learn only a new 32-number user vector from their picks. Starting from the average trained user, 100 Adam steps (lr 0.05) push the picks toward a score of 5.0 and 20 sampled unpicked movies toward 0.5, with a small L2 penalty that keeps the vector near real users. Two choices differ from the plan: the negatives' target is 0.5 (the label the ranking model was trained with) instead of the global mean, and they are sampled by popularity like the training negatives (ADR 0002). The negatives use a fixed seed, so the same picks always give the same list. We then score all movies, drop the picks and keep the top 20. Match score = predicted score / 5, shown as a percentage clipped to 0–100.
+
+**Sanity check.** Three hand-made users (family animation, classic horror, 90s crime), five picks each:
+
+| Fold-in negatives | Top-20 overlap between users | Animation / horror / crime films in own list |
+|---|---|---|
+| Popularity-weighted (used) | 1.3 | 7 / 3 / 9 |
+| Uniform | 4.0 | 1 / 1 / 9 |
+| None | 2.0 | 3 / 3 / 9 |
+
+The animation fan gets Shrek, Shrek 2, Beauty and the Beast and Sleeping Beauty; the crime fan gets The Usual Suspects, Se7en and The Godfather.
+
+**Cold-start Hit@10.** For 100 test users, we used their 5 highest-rated train movies as picks, folded in, and checked their liked test movies:
+
+| Method (same 100 users) | Hit@10 |
+|---|---|
+| Fold-in, 5 picks, popularity-weighted negatives | **0.41** |
+| Fold-in, uniform negatives | 0.39 |
+| Fold-in, no negatives | 0.31 |
+| Popularity | 0.36 |
+| Trained embedding (full history, upper bound) | 0.50 |
+
+With only 5 picks, fold-in beats popularity and gets most of the way to a user the model was trained on.
+
+**Limitations.** The match score is not a calibrated rating; for some users the top movies score above 5 and show 100%. Horror lists are the weakest. 100 users is a small sample (±0.05).
