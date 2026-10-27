@@ -42,3 +42,22 @@ Notes for the course report, written as each phase finishes. Newest phase last.
 **Result.** NCF beats popularity on both metrics (RMSE 0.8662 vs 0.9505; Hit@10 0.4072 vs 0.3856), which meets the project goal. It does **not** beat item-KNN (RMSE 0.8582, Hit@10 0.5441). With about 72k ratings, a hand-built similarity method is hard to beat; NCF earns its place in the app because it can fold in a brand-new user and gives user embeddings for personas.
 
 **Limitations.** The negatives ratio was picked using test Hit@10 rather than validation, so that number is slightly optimistic. Results repeat exactly within one Colab session but moved by up to ~0.04 Hit@10 between sessions (different hardware), so the gap between 2 and 4 negatives is within noise. All reported numbers come from one final run.
+
+## Fixing popularity bias in the ranking model (found in Phase 4)
+
+**Problem.** When we folded in three hand-made users with very different tastes (family animation, classic horror, 90s crime), they all got nearly the same top 20: Shawshank, Forrest Gump, The Matrix. The animation fan got no more than two animated films. Checking the trained users showed the same pattern: their top 20s shared 12 of 20 movies with the "average user" list. So the ranking model itself, not fold-in, was the problem.
+
+**Cause.** The ranking model's negatives were sampled uniformly. Most of the 3,636 movies are obscure, so almost every negative was an obscure movie (median 9 ratings). The model learned "popular movies get rated, obscure ones don't" — which is mostly popularity — and never had to use the user vector to tell apart a popular movie this user would like from one they would skip.
+
+**Fix.** Sample negatives in proportion to `rating_count ** 0.75`, as word2vec does for words (ADR 0002). Popular movies now also appear as negatives for users who did not rate them, which forces the model to use the user's taste.
+
+| Negatives (mean of 3 seeds) | Val Hit@10 | Test Hit@10 | Top-20 overlap between two users |
+|---|---|---|---|
+| Uniform | 0.455 | 0.449 | 7.3 |
+| Popularity-weighted | 0.426 | 0.454 | 3.8 |
+
+Hit@10 is a tie within seed noise (one seed alone moves it by ±0.04), but lists are clearly more personal. With the new model, the three hand-made users share on average 1.3 of 20 movies (was 9), and the animation fan gets Shrek, Shrek 2, Beauty and the Beast and Sleeping Beauty. The shipped model (seed 42) has test Hit@10 0.4667.
+
+**Lesson.** Hit@10 alone did not reveal the problem: a model that mostly recommends popular movies scores well on it. A hand-made sanity check plus a simple "how similar are different users' lists" metric caught it.
+
+**Limitations.** Horror recommendations are still weak (3 of 20 horror films), probably because classic horror films have few ratings. Popular negatives also include some movies a user would like but has not rated yet.

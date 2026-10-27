@@ -1,6 +1,6 @@
 # 0001. Two NCF models: one for rating, one for ranking
 
-- Status: accepted
+- Status: accepted; negative sampling changed to popularity-weighted by ADR 0002
 - Date: 2026-10-24
 - Issue: #8 (Phase 3)
 

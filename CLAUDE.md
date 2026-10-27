@@ -62,6 +62,7 @@ Layer rule: api → services → repositories. Never skip a layer or import upwa
 - NCF in PyTorch: embeddings dim 32 → concat → MLP 64 → 32 → 1, ReLU, dropout 0.2; MSE, Adam (lr 1e-2).
 - Two NCF models (ADR 0001): rating model (real ratings) for RMSE; ranking model
   (+4 sampled negatives per rating, label 0.5) for Hit@10 and serving as `ncf_model.pt`.
+  Negatives sampled ∝ rating_count^0.75 in training and fold-in (ADR 0002).
 - Cold start: freeze weights, optimize one user vector (~100 steps), picks = 5.0, plus random negatives.
 - Personas: K-means (K 6–12, ~8) on L2-normalized user embeddings; nearest centroid at runtime.
 - Endpoints: `GET /movies`, `POST /recommend` (`movie_ids`: 5–10 ints), `GET /health`.
