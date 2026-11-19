@@ -4,7 +4,7 @@ import torch
 
 from app.core.config import N_RECOMMENDATIONS
 from app.repositories.artifacts import Artifacts
-from app.services.recommender import UnknownMovieError, assign_persona, recommend_for_picks
+from app.services.recommender import UnknownMovieError, assign_persona, match_percents, recommend_for_picks
 
 # MovieLens ids of the hand-made users from notebook 04.
 ANIMATION_PICKS = [1, 364, 588, 6377, 4886]  # Toy Story, Lion King, Aladdin, Finding Nemo, Monsters Inc.
@@ -46,6 +46,26 @@ def test_match_percents_are_between_0_and_100(artifacts: Artifacts) -> None:
     result = recommend_for_picks(artifacts, HORROR_PICKS)
 
     assert all(0 <= r.match_percent <= 100 for r in result.recommendations)
+
+
+def test_match_percents_are_relative_to_the_best_pick() -> None:
+    scores = np.array([6.0, 4.0, 2.0, -1.0], dtype=np.float32)
+
+    assert match_percents(scores, best_pick_score=4.0).tolist() == [100, 100, 50, 0]
+
+
+def test_match_percents_use_a_floor_for_a_tiny_best_pick_score() -> None:
+    scores = np.array([0.25], dtype=np.float32)
+
+    assert match_percents(scores, best_pick_score=0.01).tolist() == [50]  # 0.25 / 0.5, not 0.25 / 0.01
+
+
+def test_match_percents_spread_out_for_a_real_user(artifacts: Artifacts) -> None:
+    result = recommend_for_picks(artifacts, ANIMATION_PICKS)
+
+    matches = [r.match_percent for r in result.recommendations]
+    assert matches == sorted(matches, reverse=True)
+    assert matches.count(100) <= 1
 
 
 def test_unknown_movie_id_raises_with_the_bad_ids(artifacts: Artifacts) -> None:
