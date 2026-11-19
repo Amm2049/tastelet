@@ -88,7 +88,7 @@ The animation fan gets Shrek, Shrek 2, Beauty and the Beast and Sleeping Beauty;
 
 With only 5 picks, fold-in beats popularity and gets most of the way to a user the model was trained on.
 
-**Limitations.** The match score is not a calibrated rating; for some users the top movies score above 5 and show 100%. Horror lists are the weakest. 100 users is a small sample (±0.05).
+**Limitations.** The match score is not a calibrated rating. The plan's `score / 5` showed rows of 100% for users with popular tastes, so the app shows `score / best pick's score` instead (ADR 0003): 100% means "as strong as your strongest pick". Horror lists are the weakest. 100 users is a small sample (±0.05).
 
 ## Personas (Phase 5)
 

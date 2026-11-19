@@ -6,9 +6,10 @@
 | 02_baselines.ipynb | 2 Baselines | results/results.csv rows |
 | 03_ncf.ipynb | 3 Neural model | rating + ranking models, loss curve (ADR 0001) |
 | 03b_popularity_negatives.ipynb | #11 fix | backend/artifacts/ncf_model.pt, popneg row (ADR 0002) |
-| 04_fold_in_personas.ipynb | 4-5 Fold-in + personas | cold-start Hit@10 row; centroids.json, personas.json (Phase 5) |
+| 04_fold_in_personas.ipynb | 4-5 Fold-in + personas | cold-start Hit@10 row; centroids.json, personas.json; copies movies_meta.json, movie2idx.json and movie_rating_counts.json into backend/artifacts |
 
 Notebooks 01-03 run in Colab. From 03b on they also run locally: put the processed files from
 Drive into `data/processed/`, create `.venv`, then run from `notebooks/`.
 
-Rule: explore here, then move code that works into `ml/` (tested) and import it back.
+Code the app needs at runtime (NCF class, fold-in, ranking, personas) lives in `backend/app/`, with tests.
+Notebook 03 uses Colab Drive paths; 03b and 04 run locally too.
