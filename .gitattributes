@@ -1,0 +1,6 @@
+# Store text with LF everywhere so Windows and CI agree (no CRLF warnings).
+* text=auto eol=lf
+*.png binary
+*.pdf binary
+*.pt binary
+*.pptx binary
