@@ -6,6 +6,7 @@ Same method and numbers as notebook 04 (fold-in, ranking) and its persona cells 
 from dataclasses import dataclass
 
 import numpy as np
+import numpy.typing as npt
 import torch
 from torch import nn
 
@@ -50,7 +51,7 @@ def to_movie_indices(movie_ids: list[int], movie_idx_by_id: dict[int, int]) -> l
 
 
 def fold_in_user_vector(
-    model: NCF, picks: list[int], negative_weights: np.ndarray, rng: np.random.Generator
+    model: NCF, picks: list[int], negative_weights: npt.NDArray[np.float64], rng: np.random.Generator
 ) -> torch.Tensor:
     """Learn one user vector (model frozen) so picks score PICK_RATING and sampled other movies NEGATIVE_RATING."""
     user_vec = nn.Parameter(model.user_embedding.weight.mean(dim=0, keepdim=True).clone())
@@ -66,7 +67,7 @@ def fold_in_user_vector(
         optimizer.zero_grad()
         predicted = model.score_vec(user_vec.expand(len(movie_ids), -1), movie_ids)
         loss = ((predicted - targets) ** 2).mean() + FOLD_IN_L2 * (user_vec**2).sum()
-        loss.backward()
+        loss.backward()  # type: ignore[no-untyped-call]  # torch ships this method untyped
         optimizer.step()
     return user_vec.detach()
 
@@ -79,10 +80,10 @@ def top_recommendations(model: NCF, user_vec: torch.Tensor, picks: list[int]) ->
     top = np.argsort(-scores, kind="stable")[:N_RECOMMENDATIONS]  # stable: ties break the same way every run
     # Not a calibrated rating: a relative strength, clipped so it reads as a percentage.
     match_percents = np.clip(scores[top] / PICK_RATING * 100, 0, 100).round().astype(int)
-    return [Recommendation(int(idx), int(match)) for idx, match in zip(top, match_percents)]
+    return [Recommendation(int(idx), int(match)) for idx, match in zip(top, match_percents, strict=True)]
 
 
-def assign_persona(user_vec: torch.Tensor, unit_centroids: np.ndarray) -> int:
+def assign_persona(user_vec: torch.Tensor, unit_centroids: npt.NDArray[np.float64]) -> int:
     unit_vec = user_vec.numpy().ravel() / np.linalg.norm(user_vec.numpy())
     return int(np.argmax(unit_centroids @ unit_vec))  # unit vectors: largest dot product = nearest centroid
 

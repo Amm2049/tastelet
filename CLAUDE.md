@@ -111,3 +111,5 @@ Layer rule: api → services → repositories. Never skip a layer or import upwa
 ## Commands
 - Install (backend): `.venv/Scripts/python -m pip install -r backend/requirements-dev.txt`
 - Tests: `cd backend && ../.venv/Scripts/python -m pytest`
+- Lint + types: `cd backend && ../.venv/Scripts/python -m ruff format . && ../.venv/Scripts/python -m ruff check . && ../.venv/Scripts/python -m mypy app tests`
+- Run API: `cd backend && ../.venv/Scripts/python -m uvicorn app.main:app --reload` (docs at http://localhost:8000/docs)

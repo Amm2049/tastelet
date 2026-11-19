@@ -27,7 +27,8 @@ class NCF(nn.Module):
     def score_vec(self, user_vecs: torch.Tensor, movie_ids: torch.Tensor) -> torch.Tensor:
         # Takes user vectors directly, so a folded-in user (not in the embedding table) can be scored.
         pair = torch.cat([user_vecs, self.movie_embedding(movie_ids)], dim=1)
-        return self.mlp(pair).squeeze(-1)
+        scores: torch.Tensor = self.mlp(pair).squeeze(-1)
+        return scores
 
     def forward(self, user_ids: torch.Tensor, movie_ids: torch.Tensor) -> torch.Tensor:
         return self.score_vec(self.user_embedding(user_ids), movie_ids)

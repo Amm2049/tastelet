@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+import numpy.typing as npt
 
 from app.core.config import POPULARITY_EXPONENT
 from app.ml.model import NCF, load_ncf
@@ -16,8 +17,8 @@ class Artifacts:
     model: NCF
     movies_by_idx: list[dict[str, Any]]  # position = model's movie index
     movie_idx_by_id: dict[int, int]  # MovieLens id (used by the API) -> model index
-    negative_weights: np.ndarray  # fold-in negative sampling weight per movie index
-    unit_centroids: np.ndarray  # (n_personas, dim), each row length 1
+    negative_weights: npt.NDArray[np.float64]  # fold-in negative sampling weight per movie index
+    unit_centroids: npt.NDArray[np.float64]  # (n_personas, dim), each row length 1
     personas: list[dict[str, Any]]  # position = persona id
     home_lists: dict[str, list[int]]  # list name -> MovieLens ids
 
