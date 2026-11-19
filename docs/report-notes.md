@@ -89,3 +89,22 @@ The animation fan gets Shrek, Shrek 2, Beauty and the Beast and Sleeping Beauty;
 With only 5 picks, fold-in beats popularity and gets most of the way to a user the model was trained on.
 
 **Limitations.** The match score is not a calibrated rating; for some users the top movies score above 5 and show 100%. Horror lists are the weakest. 100 users is a small sample (±0.05).
+
+## Personas (Phase 5)
+
+**Method.** Each of the 610 trained users has a 32-number vector in the ranking model. We scale every vector to length 1, so users group by the direction of their taste rather than its strength, then run K-means for K = 6 to 12 (seed 42).
+
+**Choosing K.** Silhouette is about 0.1 for every K: tastes form a smooth spectrum, not neat groups, so the scores cannot pick K. We chose by readability instead. Counting each cluster's liked genres gave every cluster Drama, Comedy and Action, the most common genres overall, so we rank genres by **lift**: a genre's share of the cluster's liked movies divided by its share overall. (This differs from the plan, which counts genres.) IMAX is left out because it is a format, not a genre. At K = 6 no two clusters share 2 of their top 3 genres; at K = 8, five pairs do.
+
+| Persona | Users | Top genres (lift) |
+|---|---|---|
+| The Classic Romantic | 124 | Western, Musical, Romance |
+| The Mind-Bender | 87 | Mystery, Drama, Horror |
+| The Case Cracker | 117 | Crime, Mystery, Thriller |
+| The Film Buff | 90 | Film-Noir, Documentary, Western |
+| The Dreamer | 87 | Animation, Children, Fantasy |
+| The Thrill Seeker | 105 | Horror, Sci-Fi, Western |
+
+**At runtime** a new user's folded-in vector is normalized and gets the persona with the most similar centroid. The three hand-made users land in The Dreamer (animation), The Thrill Seeker (horror) and The Case Cracker (90s crime).
+
+**Limitations.** Clusters are weak (silhouette ~0.1), and some lifts are mild (Mind-Bender and Thrill Seeker about 1.1 to 1.35), so a persona is a light label, not a strong finding. The favourite-movie lists per cluster are noisy (Toy Story 3 appears in the crime cluster).
