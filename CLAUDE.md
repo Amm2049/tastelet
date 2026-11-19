@@ -109,4 +109,5 @@ Layer rule: api → services → repositories. Never skip a layer or import upwa
 - [ ] Billy has reviewed it and can explain it
 
 ## Commands
-_Add as they become real (e.g. `make dev`, `make test`, `uvicorn app.main:app --reload`)._
+- Install (backend): `.venv/Scripts/python -m pip install -r backend/requirements-dev.txt`
+- Tests: `cd backend && ../.venv/Scripts/python -m pytest`
