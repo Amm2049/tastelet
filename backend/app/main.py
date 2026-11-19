@@ -12,7 +12,7 @@ from fastapi.responses import JSONResponse
 from app.api.routes import router
 from app.core.config import ALLOWED_ORIGINS, ARTIFACTS_DIR, MAX_PICKS, MIN_PICKS
 from app.repositories.artifacts import load_artifacts
-from app.services.recommender import UnknownMovieError
+from app.services.recommender import UnknownMovieError, recommend_for_picks
 
 PICK_COUNT_MESSAGE = f"Pick between {MIN_PICKS} and {MAX_PICKS} movies."
 
@@ -39,7 +39,10 @@ async def unknown_movie_handler(_: Request, error: Exception) -> JSONResponse:
 def create_app(artifacts_dir: Path = ARTIFACTS_DIR) -> FastAPI:
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-        app.state.artifacts = load_artifacts(artifacts_dir)  # once, not per request
+        artifacts = load_artifacts(artifacts_dir)  # once, not per request
+        # PyTorch's first fold-in pays ~1 s of one-time setup; pay it here, not on the first user.
+        recommend_for_picks(artifacts, artifacts.home_lists["popular"][:MIN_PICKS])
+        app.state.artifacts = artifacts
         yield
 
     app = FastAPI(title="Tastelet API", lifespan=lifespan)

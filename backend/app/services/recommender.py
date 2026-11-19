@@ -72,15 +72,25 @@ def fold_in_user_vector(
     return user_vec.detach()
 
 
+def match_percents(scores: npt.NDArray[np.float32], best_pick_score: float) -> npt.NDArray[np.int64]:
+    """100% = scores as high as the user's best-scoring pick (ADR 0003).
+
+    The ranking model's scores are not calibrated ratings, so the plan's score / 5 showed many 100%s.
+    The floor stops a tiny best-pick score from blowing every match up to 100%.
+    """
+    reference = max(best_pick_score, NEGATIVE_RATING)
+    return np.clip(scores / reference * 100, 0, 100).round().astype(np.int64)
+
+
 def top_recommendations(model: NCF, user_vec: torch.Tensor, picks: list[int]) -> list[Recommendation]:
     n_movies = model.movie_embedding.num_embeddings
     with torch.no_grad():
         scores = model.score_vec(user_vec.expand(n_movies, -1), torch.arange(n_movies)).numpy()
+    best_pick_score = float(scores[picks].max())
     scores[picks] = -np.inf  # never recommend a movie the user already picked
     top = np.argsort(-scores, kind="stable")[:N_RECOMMENDATIONS]  # stable: ties break the same way every run
-    # Not a calibrated rating: a relative strength, clipped so it reads as a percentage.
-    match_percents = np.clip(scores[top] / PICK_RATING * 100, 0, 100).round().astype(int)
-    return [Recommendation(int(idx), int(match)) for idx, match in zip(top, match_percents, strict=True)]
+    matches = match_percents(scores[top], best_pick_score)
+    return [Recommendation(int(idx), int(match)) for idx, match in zip(top, matches, strict=True)]
 
 
 def assign_persona(user_vec: torch.Tensor, unit_centroids: npt.NDArray[np.float64]) -> int:
