@@ -35,8 +35,7 @@ He wants to understand every part, not receive finished code.
 ## Repo layout
 ```
 data/raw, data/processed   # MovieLens + TMDB cache (git-ignored)
-notebooks/                 # Phases 1–5 in Colab; explore here first
-ml/                        # tested training code graduated from notebooks
+notebooks/                 # Phases 1–5 (training + evaluation); 04 also exports backend artifacts
 results/                   # results.csv + figures for the report
 backend/
   app/
@@ -45,14 +44,16 @@ backend/
     services/      # logic: recommender (fold-in + ranking), persona, genre sentence
     repositories/  # loads artifacts / movie metadata; the only code touching files
     ml/            # NCF model class (shared by training and serving)
-    core/          # config (pydantic-settings), logging, startup wiring
+    core/          # config.py: constants + ALLOWED_ORIGINS from the environment
     main.py        # app factory, lifespan, CORS
-  artifacts/       # ncf_model.pt, centroids.json, personas.json, movies_meta.json (committed)
-  tests/
-frontend/          # Vite + React (remove .gitkeep before `npm create vite`)
-docs/              # spec, plan, proposal PDFs
+  artifacts/       # ncf_model.pt, centroids.json, personas.json, movies_meta.json, movie2idx.json,
+                   # movie_rating_counts.json (committed; written by notebook 04)
+  tests/           # pytest: unit + FastAPI TestClient
+frontend/          # Vite + React (JavaScript); src/components, api.js, picks.js; Vitest
+docs/              # spec, plan, proposal PDFs; slides
   adr/             # architecture decision records
 docs/devlog.md     # short note per session
+render.yaml        # Render blueprint for the backend (frontend goes on Vercel)
 ```
 Layer rule: api → services → repositories. Never skip a layer or import upward.
 
@@ -64,7 +65,10 @@ Layer rule: api → services → repositories. Never skip a layer or import upwa
   (+4 sampled negatives per rating, label 0.5) for Hit@10 and serving as `ncf_model.pt`.
   Negatives sampled ∝ rating_count^0.75 in training and fold-in (ADR 0002).
 - Cold start: freeze weights, optimize one user vector (~100 steps), picks = 5.0, plus random negatives.
-- Personas: K-means (K 6–12, ~8) on L2-normalized user embeddings; nearest centroid at runtime.
+- Personas: K-means on L2-normalized user embeddings, **K = 6** (genres ranked by lift, not counts;
+  no look-alike clusters at K = 6); nearest normalized centroid (cosine) at runtime.
+- Match score = score / best pick score, clipped 0–100 (ADR 0003), not the plan's score / 5.
+- Fold-in is warmed up once at startup so the first user's request is fast.
 - Endpoints: `GET /movies`, `POST /recommend` (`movie_ids`: 5–10 ints), `GET /health`.
   Bad input → 422 with a plain message.
 - TMDB data is fetched **offline** into `movies_meta.json`; the running app calls no external API.
@@ -73,8 +77,8 @@ Layer rule: api → services → repositories. Never skip a layer or import upwa
 - Privacy: picks are never stored or logged.
 
 ## Engineering rules
-- **Types:** Python type hints everywhere (checked by mypy); React with clear prop shapes
-  (TypeScript preferred if Billy agrees — decide in an ADR before Phase 7).
+- **Types:** Python type hints everywhere (mypy strict); frontend is plain JavaScript (Billy's choice,
+  2026-11-19), so keep props few and obvious.
 - **Names say intent:** `fold_in_user_vector`, `is_valid_pick_count`; no `data`, `tmp`, `process`.
 - **Small functions** (~30 lines max), one job each. No magic numbers — constants in `core/config.py`.
 - **Errors at the edges:** Pydantic validates in routes; services raise clear domain errors
@@ -97,7 +101,7 @@ Layer rule: api → services → repositories. Never skip a layer or import upwa
 - Unit tests (pytest) for: evaluation helpers, genre sentence, persona assignment, ranking
   (no picks in output, 10–20 results, deterministic).
 - Integration tests with FastAPI `TestClient` for all three endpoints, including 422 cases.
-- Frontend: Vitest for logic (pick limits), Playwright later for the full flow.
+- Frontend: Vitest for pick rules (`picks.test.js`) and the full flow with a mocked API (`App.test.jsx`).
 - Model quality: `results.csv` must show NCF beating popularity on RMSE (vs movie-mean 0.9505)
   and Hit@10.
 
@@ -113,3 +117,6 @@ Layer rule: api → services → repositories. Never skip a layer or import upwa
 - Tests: `cd backend && ../.venv/Scripts/python -m pytest`
 - Lint + types: `cd backend && ../.venv/Scripts/python -m ruff format . && ../.venv/Scripts/python -m ruff check . && ../.venv/Scripts/python -m mypy app tests`
 - Run API: `cd backend && ../.venv/Scripts/python -m uvicorn app.main:app --reload` (docs at http://localhost:8000/docs)
+- Frontend: `cd frontend && npm install && npm run dev` (http://localhost:5173)
+- Frontend checks: `cd frontend && npm run format:check && npm run lint && npm test && npm run build`
+- CI (`.github/workflows/ci.yml`) runs all backend and frontend checks on every PR.

@@ -6,7 +6,10 @@ One entry per work session: yesterday / today / blockers. Newest first.
 - Yesterday: away since Oct 27; deadline moved to Nov 23, so scope is trimmed (local demo, no deploy).
 - Today: Phase 5 personas (#14). K-means on normalized user vectors; silhouette ~0.1 for every K, so chose by readability. Counting genres gave every cluster Drama/Comedy/Action, so genres are ranked by lift instead. K=6: no look-alike clusters (K=8 had 5 pairs). Saved `centroids.json` and `personas.json`; the three hand-made users land in The Dreamer, The Thrill Seeker and The Case Cracker.
 - Learned: when metrics can't decide (flat silhouette), pick a justified default and check it by looking at the output.
-- Blockers: none; Phase 6 backend next.
+- Later: Phase 6 backend (#16, PR #17): NCF loader, fold-in, ranking, personas, genre sentence and the three endpoints; 30 pytest tests, ruff + mypy strict, CI. Phase 7 frontend (#18, PR #19): React (JavaScript) grid, picker, result page; 19 Vitest tests; checked in real Chrome at 1280 px and 360 px.
+- Found in the browser: the first request took 7 s (PyTorch warm-up) -> warm up at startup; rows of "100% match" -> match relative to the best pick (ADR 0003).
+- Learned: test in the real app, not only with unit tests; both bugs were invisible to the test suite.
+- Blockers: deploy needs Billy's Render and Vercel accounts (steps in README).
 
 ## 2026-10-27
 - Today: opened Phase 4 (#10); `score_vec`, `fold_in`, `recommend` in notebook 04. Hand-made users got near-identical generic lists. Diagnosed: the ranking model mostly scores by popularity (uniform negatives are obscure movies). Opened #11: popularity-weighted negatives; personal lists, Hit@10 unchanged within seed noise (ADR 0002). Training now runs locally in `.venv`.
