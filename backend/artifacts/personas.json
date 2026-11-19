@@ -1,0 +1,62 @@
+[
+  {
+    "id": 0,
+    "name": "The Classic Romantic",
+    "description": "Big feelings and sweeping stories: musicals, westerns and romance.",
+    "top_genres": [
+      "Western",
+      "Musical",
+      "Romance"
+    ]
+  },
+  {
+    "id": 1,
+    "name": "The Mind-Bender",
+    "description": "Dark dramas and mysteries that stay in your head long after the credits.",
+    "top_genres": [
+      "Mystery",
+      "Drama",
+      "Horror"
+    ]
+  },
+  {
+    "id": 2,
+    "name": "The Case Cracker",
+    "description": "Crime, clues and twisty thrillers: you like to figure it out first.",
+    "top_genres": [
+      "Crime",
+      "Mystery",
+      "Thriller"
+    ]
+  },
+  {
+    "id": 3,
+    "name": "The Film Buff",
+    "description": "Film noir, documentaries and the classics most people never got around to.",
+    "top_genres": [
+      "Film-Noir",
+      "Documentary",
+      "Western"
+    ]
+  },
+  {
+    "id": 4,
+    "name": "The Dreamer",
+    "description": "Animation, family films and fantasy worlds you would happily move into.",
+    "top_genres": [
+      "Animation",
+      "Children",
+      "Fantasy"
+    ]
+  },
+  {
+    "id": 5,
+    "name": "The Thrill Seeker",
+    "description": "Scares and sci-fi: if it makes your heart race, you are in.",
+    "top_genres": [
+      "Horror",
+      "Sci-Fi",
+      "Western"
+    ]
+  }
+]

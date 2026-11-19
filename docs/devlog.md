@@ -2,6 +2,12 @@
 
 One entry per work session: yesterday / today / blockers. Newest first.
 
+## 2026-11-19
+- Yesterday: away since Oct 27; deadline moved to Nov 23, so scope is trimmed (local demo, no deploy).
+- Today: Phase 5 personas (#14). K-means on normalized user vectors; silhouette ~0.1 for every K, so chose by readability. Counting genres gave every cluster Drama/Comedy/Action, so genres are ranked by lift instead. K=6: no look-alike clusters (K=8 had 5 pairs). Saved `centroids.json` and `personas.json`; the three hand-made users land in The Dreamer, The Thrill Seeker and The Case Cracker.
+- Learned: when metrics can't decide (flat silhouette), pick a justified default and check it by looking at the output.
+- Blockers: none; Phase 6 backend next.
+
 ## 2026-10-27
 - Today: opened Phase 4 (#10); `score_vec`, `fold_in`, `recommend` in notebook 04. Hand-made users got near-identical generic lists. Diagnosed: the ranking model mostly scores by popularity (uniform negatives are obscure movies). Opened #11: popularity-weighted negatives; personal lists, Hit@10 unchanged within seed noise (ADR 0002). Training now runs locally in `.venv`.
 - Learned: measure before fixing (model vs fold-in test pointed to the real cause); Hit@10 can hide popularity bias; compare models over several seeds before trusting a 0.05 difference.
