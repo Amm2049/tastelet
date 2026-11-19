@@ -4,13 +4,14 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
 
+import torch
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.api.routes import router
-from app.core.config import ALLOWED_ORIGINS, ARTIFACTS_DIR, MAX_PICKS, MIN_PICKS
+from app.core.config import ALLOWED_ORIGINS, ARTIFACTS_DIR, MAX_PICKS, MIN_PICKS, TORCH_THREADS
 from app.repositories.artifacts import load_artifacts
 from app.services.recommender import UnknownMovieError, recommend_for_picks
 
@@ -39,6 +40,9 @@ async def unknown_movie_handler(_: Request, error: Exception) -> JSONResponse:
 def create_app(artifacts_dir: Path = ARTIFACTS_DIR) -> FastAPI:
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+        # The tensors are tiny, so extra threads only add overhead; on a shared free-tier CPU
+        # (Render: ~0.1 CPU) one thread per host core made /recommend take 1-18 s (issue #22).
+        torch.set_num_threads(TORCH_THREADS)
         artifacts = load_artifacts(artifacts_dir)  # once, not per request
         # PyTorch's first fold-in pays ~1 s of one-time setup; pay it here, not on the first user.
         recommend_for_picks(artifacts, artifacts.home_lists["popular"][:MIN_PICKS])

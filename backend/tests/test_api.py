@@ -1,6 +1,7 @@
 from collections.abc import Iterator
 
 import pytest
+import torch
 from fastapi.testclient import TestClient
 
 from app.main import create_app
@@ -12,6 +13,11 @@ ANIMATION_PICKS = [1, 364, 588, 6377, 4886]
 def client() -> Iterator[TestClient]:
     with TestClient(create_app()) as test_client:  # `with` runs the startup lifespan
         yield test_client
+
+
+def test_startup_limits_torch_to_one_thread(client: TestClient) -> None:
+    # Many threads on a shared free-tier CPU made /recommend take up to 18 s (issue #22).
+    assert torch.get_num_threads() == 1
 
 
 def test_health(client: TestClient) -> None:

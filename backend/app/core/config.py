@@ -8,6 +8,8 @@ ARTIFACTS_DIR = Path(__file__).resolve().parents[2] / "artifacts"
 # Comma-separated; set to the deployed frontend URL in production.
 ALLOWED_ORIGINS = os.environ.get("ALLOWED_ORIGINS", "http://localhost:5173").split(",")
 
+TORCH_THREADS = 1  # see main.py lifespan (issue #22)
+
 SEED = 42  # fixed seed for fold-in negatives: same picks -> same persona and list (F4)
 
 MIN_PICKS = 5
