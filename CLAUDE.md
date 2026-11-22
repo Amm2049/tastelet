@@ -41,7 +41,8 @@ backend/
   app/
     api/           # FastAPI routes: thin — validate, call a service, return schema
     schemas/       # Pydantic request/response models
-    services/      # logic: recommender (fold-in + ranking), persona, genre sentence
+    services/      # logic: recommender (fold-in + ranking), persona, genre sentence,
+                   # v2: browse (picker rows), search, titles, result_rows (franchise + genre rows)
     repositories/  # loads artifacts / movie metadata; the only code touching files
     ml/            # NCF model class (shared by training and serving)
     core/          # config.py: constants + ALLOWED_ORIGINS from the environment
@@ -69,9 +70,27 @@ Layer rule: api → services → repositories. Never skip a layer or import upwa
   no look-alike clusters at K = 6); nearest normalized centroid (cosine) at runtime.
 - Match score = score / best pick score, clipped 0–100 (ADR 0003), not the plan's score / 5.
 - Fold-in is warmed up once at startup so the first user's request is fast.
-- Endpoints: `GET /movies`, `POST /recommend` (`movie_ids`: 5–10 ints), `GET /health`.
-  Bad input → 422 with a plain message.
+- Endpoints: `GET /movies` (picker rows), `GET /movies/search?q=` (v2), `POST /recommend`
+  (`movie_ids`: 5–10 ints), `GET /health`. Bad input → 422 with a plain message.
 - TMDB data is fetched **offline** into `movies_meta.json`; the running app calls no external API.
+  Notebook 01 writes the file; then `notebooks/add_tmdb_details.py` adds `original_language` and the
+  TMDB franchise (`collection_id`, `collection_name`). Re-running notebook 01 drops those, so always
+  run the script after it.
+
+## v2 (branch `v2`, worktree `D:\RSU\AI\tastelet-v2`; local only, not pushed or deployed)
+- Why: results felt "too old" because the v1 picker only offered old movies (see ADR 0004).
+- Picker rows (`services/browse.py`): Recent hits (2010+), one row per genre in `BROWSE_GENRES`
+  (2000+, 2010s first), Japanese animation right after Animation (and kept out of it). Each movie
+  appears once per page; the first row wins. Plus title search and a "Your picks" row.
+- Ranking: "prefer newer" boost `NEWER_BOOST = 0.3` (ADR 0004); Hit@10 unchanged.
+- Results page: Start over at the top, persona + genre sentence (keep it), hero = #1 match,
+  "Top picks for you" = rest of the top 20. The main list is always the model's own ranking.
+  Then "More from your franchises" (unpicked movies of the picks' TMDB franchises, may repeat a
+  top pick on purpose), then "Because you love <genre>" rows with a fun caption (never repeat a movie).
+- Titles are shown as "The Dark Knight", not MovieLens's "Dark Knight, The" (`services/titles.py`).
+- Theme: dark with a vibrant red accent; every colour is a token at the top of `frontend/src/index.css`.
+- Run v2 beside v1: backend on 8001 (`ALLOWED_ORIGINS=http://localhost:5174`), frontend on 5174
+  (`VITE_API_URL=http://localhost:8001`). `uvicorn --reload` hangs on Windows here; restart by hand.
 - Artifacts loaded **once** at startup (FastAPI lifespan). Response < 3 s on CPU.
 - Same picks → same persona and list (deterministic).
 - Privacy: picks are never stored or logged.

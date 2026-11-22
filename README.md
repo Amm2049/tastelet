@@ -22,11 +22,16 @@ Checks: `cd backend && ../.venv/Scripts/python -m pytest` and `cd frontend && np
 
 ```
 React (Vite) ──POST /recommend──▶ FastAPI ── 1 fold in the new user (frozen NCF, 100 Adam steps)
-     ▲                                     ── 2 score all movies, drop the picks, keep the top 20
-     └──── persona + 20 movies ◀────────── ── 3 nearest K-means centroid → persona
-                                           ── 4 genre sentence from the picks
+     ▲                                     ── 2 score all movies (+ small "prefer newer" boost),
+     │                                          drop the picks, keep the top 20
+     └──── persona + rows ◀─────────────── ── 3 nearest K-means centroid → persona
+                                           ── 4 genre sentence, franchise row, genre rows
                                  artifacts/ (model + JSON, loaded once at startup)
 ```
+
+The picker shows Netflix-style rows (recent hits first, one row per genre, Japanese animation) and a
+title search. The results page shows the #1 match as a banner, then "Top picks for you" (the model's
+own ranking), "More from your franchises" and "Because you love <genre>" rows.
 
 Training is offline in `notebooks/` (Colab or local); its outputs live in `backend/artifacts/`.
 
@@ -47,8 +52,9 @@ decision records in `docs/adr/`.
 
 | Endpoint | Request | Response |
 |---|---|---|
-| `GET /movies` | – | `{trending, popular, all_time}`: movies with `id, title, year, genres, poster` |
-| `POST /recommend` | `{"movie_ids": [...]}`, 5–10 unique ids | `{persona, description, genre_sentence, recommendations: [{id, title, poster, score}]}` |
+| `GET /movies` | – | `{rows: [{key, title, movies}]}`: picker rows; movies have `id, title, year, genres, poster` |
+| `GET /movies/search?q=` | text (2+ characters) | `{movies: [...]}`: up to 20 title matches, most rated first |
+| `POST /recommend` | `{"movie_ids": [...]}`, 5–10 unique ids | `{persona, description, genre_sentence, recommendations, franchise_row, genre_rows}`; movies have `id, title, year, genres, overview, poster, score` |
 | `GET /health` | – | `{"status": "ok"}` |
 
 Bad input returns `422` with one plain sentence in `detail`. Interactive docs: `/docs`.
@@ -66,8 +72,9 @@ Bad input returns `422` with one plain sentence in `detail`. Interactive docs: `
 ## Demo (about 3 minutes)
 
 1. Open the site 5 minutes early so the backend is awake.
-2. Pick 5 family animations (Toy Story, The Lion King, Aladdin, Finding Nemo, Monsters, Inc.) → **The Dreamer**.
-3. Start over → pick 5 horror classics (The Shining, The Exorcist, Halloween, A Nightmare on Elm Street,
+2. Pick 5 family animations (Toy Story, The Lion King, Aladdin, Finding Nemo, Monsters, Inc.; use search)
+   → **The Dreamer**. Scroll to "More from your franchises": Toy Story 2 and 3, Monsters University, …
+3. Start over (top of the page) → pick 5 horror classics (The Shining, The Exorcist, Halloween, A Nightmare on Elm Street,
    The Texas Chainsaw Massacre) → **The Thrill Seeker**, a different list.
 4. Point to the results table above.
 
@@ -75,9 +82,10 @@ Bad input returns `422` with one plain sentence in `detail`. Interactive docs: `
 
 ```
 notebooks/          01 data prep · 02 baselines · 03 NCF · 03b popularity negatives · 04 fold-in + personas
+                    add_tmdb_details.py (language + franchise, run after 01) · eval_newer_boost.py (ADR 0004)
 backend/app/        api (routes) → services (fold-in, ranking, persona, genre sentence) → repositories (files)
 backend/artifacts/  ncf_model.pt, centroids.json, personas.json, movies_meta.json, … (made by notebook 04)
-frontend/src/       App, components/, api.js, picks.js
+frontend/src/       App, components/ (MovieRow, HeroMatch, …), api.js, picks.js, useMovieSearch.js
 results/            results.csv, figures/
 docs/               spec, plan, proposal (PDF) · adr/ · report-notes.md · devlog.md · slides
 ```
