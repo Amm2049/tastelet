@@ -15,10 +15,18 @@ class MovieCard(BaseModel):
     poster: str
 
 
-class HomeGridResponse(BaseModel):
-    trending: list[MovieCard]
-    popular: list[MovieCard]
-    all_time: list[MovieCard]
+class MovieRowResponse(BaseModel):
+    key: str
+    title: str
+    movies: list[MovieCard]
+
+
+class HomeRowsResponse(BaseModel):
+    rows: list[MovieRowResponse]
+
+
+class SearchResponse(BaseModel):
+    movies: list[MovieCard]
 
 
 class RecommendRequest(BaseModel):
@@ -36,15 +44,26 @@ class RecommendRequest(BaseModel):
 class RecommendedMovie(BaseModel):
     id: int
     title: str
+    year: int
+    genres: list[str]
+    overview: str
     poster: str
     score: int = Field(description="Match score in percent (0-100)")
+
+
+class ResultRowResponse(BaseModel):
+    title: str
+    caption: str
+    movies: list[RecommendedMovie]
 
 
 class RecommendResponse(BaseModel):
     persona: str
     description: str
     genre_sentence: str
-    recommendations: list[RecommendedMovie]
+    recommendations: list[RecommendedMovie] = Field(description="Best first; the first one is the hero")
+    franchise_row: ResultRowResponse | None = Field(description="Other movies of the picks' franchises, if any")
+    genre_rows: list[ResultRowResponse]
 
 
 class HealthResponse(BaseModel):

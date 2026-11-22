@@ -15,10 +15,14 @@ def top_by_count(counts: Counter[Any], n: int) -> list[Any]:
     return [value for value, _ in sorted(counts.items(), key=lambda item: (-item[1], item[0]))[:n]]
 
 
+def favourite_genres(picked_movies: list[dict[str, Any]], n: int) -> list[str]:
+    counts = Counter(genre for movie in picked_movies for genre in movie["genres"] if genre not in NOT_A_GENRE)
+    return top_by_count(counts, n)
+
+
 def genre_sentence(picked_movies: list[dict[str, Any]]) -> str:
-    genre_counts = Counter(genre for movie in picked_movies for genre in movie["genres"] if genre not in NOT_A_GENRE)
     decade = top_by_count(Counter(decade_of(movie["year"]) for movie in picked_movies), 1)[0]
-    top_genres = top_by_count(genre_counts, 2)
+    top_genres = favourite_genres(picked_movies, 2)
 
     if len(top_genres) == 2:
         genres_text = f"{top_genres[0]} and {top_genres[1]}"

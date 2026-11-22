@@ -2,9 +2,15 @@ import numpy as np
 import pytest
 import torch
 
-from app.core.config import N_RECOMMENDATIONS
+from app.core.config import N_CANDIDATES, N_RECOMMENDATIONS, NEWER_BOOST
 from app.repositories.artifacts import Artifacts
-from app.services.recommender import UnknownMovieError, assign_persona, match_percents, recommend_for_picks
+from app.services.recommender import (
+    UnknownMovieError,
+    assign_persona,
+    match_percents,
+    newer_boosts,
+    recommend_for_picks,
+)
 
 # MovieLens ids of the hand-made users from notebook 04.
 ANIMATION_PICKS = [1, 364, 588, 6377, 4886]  # Toy Story, Lion King, Aladdin, Finding Nemo, Monsters Inc.
@@ -79,3 +85,16 @@ def test_assign_persona_picks_the_closest_centroid() -> None:
     unit_centroids = np.array([[1.0, 0.0], [0.0, 1.0]])
 
     assert assign_persona(torch.tensor([[0.2, 3.0]]), unit_centroids) == 1
+
+
+def test_newer_boost_is_zero_up_to_1980_and_full_at_2018() -> None:
+    boosts = newer_boosts(np.array([1950, 1980, 1999, 2018, 2025]))
+
+    assert boosts.tolist() == pytest.approx([0.0, 0.0, NEWER_BOOST / 2, NEWER_BOOST, NEWER_BOOST])
+
+
+def test_ranked_candidates_extend_the_main_list(artifacts: Artifacts) -> None:
+    result = recommend_for_picks(artifacts, HORROR_PICKS)
+
+    assert len(result.ranked) == N_CANDIDATES
+    assert result.ranked[:N_RECOMMENDATIONS] == result.recommendations

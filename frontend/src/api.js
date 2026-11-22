@@ -17,6 +17,8 @@ async function request(path, options) {
 
 export const getMovies = () => request("/movies");
 
+export const searchMovies = (query) => request(`/movies/search?q=${encodeURIComponent(query)}`);
+
 export const recommend = (movieIds) =>
   request("/recommend", {
     method: "POST",
