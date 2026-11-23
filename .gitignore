@@ -20,6 +20,7 @@ dist/
 # Data (re-created by notebooks; too large / licensed)
 data/raw/*
 data/processed/*
+data/processed_v3/*
 !data/**/.gitkeep
 
 # OS / editor
