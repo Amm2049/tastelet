@@ -56,8 +56,7 @@ so the test set is each user's newest ratings:
 | NCF cold start, 5 picks (fan start + popularity blend) | **0.224** | **997** |
 
 v1 numbers (ml-latest-small, random split) are in the table above. NCF beats popularity on both metrics but not item-KNN; it is used because it can fold in a brand-new
-user and gives the user vectors the personas are built from. Details: `docs/report-notes.md` and the
-decision records in `docs/adr/`.
+user and gives the user vectors the personas are built from. Details: the decision records in `docs/adr/`.
 
 ## API
 
@@ -98,7 +97,7 @@ backend/app/        api (routes) → services (fold-in, ranking, persona, genre 
 backend/artifacts/  ncf_model.pt, centroids.json, personas.json, movies_meta.json, … (made by notebook 04)
 frontend/src/       App, components/ (MovieRow, HeroMatch, …), api.js, picks.js, useMovieSearch.js
 results/            results.csv, figures/
-docs/               spec, plan, proposal (PDF) · adr/ · report-notes.md · devlog.md · slides
+docs/               adr/ · devlog.md (v3 docs + slides: issue #28)
 ```
 
 ## Credits
