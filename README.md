@@ -21,8 +21,9 @@ Checks: `cd backend && ../.venv/Scripts/python -m pytest` and `cd frontend && np
 ## How it works
 
 ```
-React (Vite) ──POST /recommend──▶ FastAPI ── 1 fold in the new user (frozen NCF, 100 Adam steps)
-     ▲                                     ── 2 score all movies (+ small "prefer newer" boost),
+React (Vite) ──POST /recommend──▶ FastAPI ── 1 fold in the new user (frozen NCF, 100 Adam steps,
+     │                                          starting from the picks' fans)
+     ▲                                     ── 2 score all movies (+ popularity blend + "prefer newer"),
      │                                          drop the picks, keep the top 20
      └──── persona + rows ◀─────────────── ── 3 nearest K-means centroid → persona
                                            ── 4 genre sentence, franchise row, genre rows
@@ -44,7 +45,15 @@ Training is offline in `notebooks/` (Colab or local); its outputs live in `backe
 | NCF ranking model (shipped) | – | 0.4667 |
 | NCF cold start, 5 picks (100 users) | – | 0.41 (popularity 0.36) |
 
-NCF beats popularity on both metrics but not item-KNN; it is used because it can fold in a brand-new
+**v3** (this branch) retrains on MovieLens ml-32m (23,344 movies up to 2023) with a per-user time split,
+so the test set is each user's newest ratings:
+
+| v3, test set | Hit@10 | Different movies in 1,000 users' top 10s |
+|---|---|---|
+| Popularity | 0.211 | 132 |
+| NCF cold start, 5 picks (fan start + popularity blend) | **0.224** | **997** |
+
+v1 numbers (ml-latest-small, random split) are in the table above. NCF beats popularity on both metrics but not item-KNN; it is used because it can fold in a brand-new
 user and gives the user vectors the personas are built from. Details: `docs/report-notes.md` and the
 decision records in `docs/adr/`.
 

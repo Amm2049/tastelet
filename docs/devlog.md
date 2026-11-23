@@ -14,7 +14,13 @@ One entry per work session: yesterday / today / blockers. Newest first.
 - Learned: a measurable symptom (low pick scores) is not always the cause; Hit@10 can be won by giving
   everyone the popular list, so always check variety too; tune on val, test once (the fan-start val gain
   of +0.033 did not hold on test); look at real lists, they caught what Hit@10 hid.
-- Blockers: Colab notebooks `v3_01_explore`, `v3_02_train` are not in the repo yet.
+- Then: K = 7 personas (ADR 0007; clusters mix era and taste). Step 6: one-pass TMDB metadata for 23,344 movies
+  (321 without poster, 18 without year: hidden in the app). Step 7: backend serves v3 (hidden movies,
+  fan start, popularity blend); 83 tests; backend reproduces the notebook's Marvel pick score (4.36) exactly.
+- Learned: control checks (a known number that must repeat) caught nothing wrong today, which is the point:
+  every new measurement was trusted because its control matched.
+- Blockers: Colab notebooks `v3_01_explore`, `v3_02_train`, `v3_03_personas` are not in the repo yet;
+  real-app check in the browser still to do.
 
 ## 2026-11-22
 - Today: started v2 in a git worktree (`tastelet-v2`, branch `v2`, local only). Billy found "too many old
