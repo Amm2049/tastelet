@@ -7,10 +7,9 @@ Tastelet: a movie recommender web app (AI course term project, built solo by Bil
 The user picks 5–10 favorite movies → the app returns a taste persona, a favorite-genre
 sentence and 10–20 recommended movies with match scores. No accounts, no database.
 
-Sources of truth (in `docs/`):
-- `docs/scope-and-specification.pdf` — features F1–F6, API, non-functional requirements
-- `docs/implementation-plan.pdf` — setup + Phases 1–9, done-when checks
-- `docs/project-proposal.pdf` — proposal deck
+Sources of truth: the v1 spec, plan and proposal PDFs were removed as outdated (2026-11-24); they are in git at
+tag `v3.0` (`git show v3.0:docs/scope-and-specification.pdf > spec.pdf`). New v3 docs + slides: issue #28.
+Until then: README.md, `docs/adr/` (every decision since) and `docs/devlog.md`.
 
 Scope is frozen. New ideas go to a "Later" list in an issue, never into the build.
 
@@ -51,7 +50,7 @@ backend/
                    # movie_rating_counts.json (committed; written by notebook 04)
   tests/           # pytest: unit + FastAPI TestClient
 frontend/          # Vite + React (JavaScript); src/components, api.js, picks.js; Vitest
-docs/              # spec, plan, proposal PDFs; slides
+docs/              # v3 docs + slides go here (issue #28)
   adr/             # architecture decision records
 docs/devlog.md     # short note per session
 render.yaml        # Render blueprint for the backend (frontend goes on Vercel)
