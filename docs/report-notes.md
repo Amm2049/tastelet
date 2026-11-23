@@ -108,3 +108,15 @@ With only 5 picks, fold-in beats popularity and gets most of the way to a user t
 **At runtime** a new user's folded-in vector is normalized and gets the persona with the most similar centroid. The three hand-made users land in The Dreamer (animation), The Thrill Seeker (horror) and The Case Cracker (90s crime).
 
 **Limitations.** Clusters are weak (silhouette ~0.1), and some lifts are mild (Mind-Bender and Thrill Seeker about 1.1 to 1.35), so a persona is a light label, not a strong finding. The favourite-movie lists per cluster are noisy (Toy Story 3 appears in the crime cluster).
+
+## v2: "too many old movies" (found in review, 2026-11-22)
+
+**Problem.** Results felt old. Three pick sets showed the model follows the era of the picks: modern blockbusters gave 2008–2015 results, 90s classics gave mostly 90s results. The cause was the input: the v1 picker's "Trending this week" row matched none of our movies (TMDB's 2026 trending list vs a catalog that ends in 2018) and silently fell back to "Most popular", which is mostly 90s classics, and "All-time favourites" was old too. Users could hardly pick a new movie.
+
+**Fix.** Netflix-style picker rows: "Recent hits" (2010+) first, then one row per genre with 2010s movies first (pure popularity favours the 2000s, because newer movies had less time to collect ratings), Japanese animation, and title search over all 3,636 movies. A small "prefer newer" boost (0.3 added to the score, scaled from 1980 to 2018) also reorders near-ties (ADR 0004).
+
+**Effect on quality.** With the same Hit@10 code as the notebooks, the boost leaves Hit@10 unchanged (warm users 0.4667, cold start 0.41); a stronger boost (1.0) lowers cold start to 0.39. The boost alone moves the share of 2010+ results only from 7% to 8%, so the picker change is what fixes the problem. Hit@10 cannot reward recency here, because the test set is a random 10% of ratings.
+
+**Lesson.** Reproduce a bug before fixing it: tuning the model would have hidden a problem that was in the input.
+
+**Limitation.** No movies after 2018 without retraining on a newer MovieLens release (`ml-32m`).

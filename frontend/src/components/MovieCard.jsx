@@ -37,7 +37,7 @@ export default function MovieCard({ movie, selected = false, disabled = false, m
       className={`movie-card selectable${selected ? " selected" : ""}`}
       aria-pressed={selected}
       disabled={disabled}
-      onClick={() => onToggle(movie.id)}
+      onClick={() => onToggle(movie)}
     >
       {poster}
       {selected && (

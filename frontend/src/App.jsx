@@ -2,45 +2,66 @@ import { useCallback, useEffect, useState } from "react";
 
 import { getMovies, recommend, wakeBackend } from "./api.js";
 import Footer from "./components/Footer.jsx";
-import MovieSection from "./components/MovieSection.jsx";
+import MovieCard from "./components/MovieCard.jsx";
+import MovieRow from "./components/MovieRow.jsx";
 import PickBar from "./components/PickBar.jsx";
 import ResultPage from "./components/ResultPage.jsx";
+import SearchResults from "./components/SearchResults.jsx";
 import StatusMessage from "./components/StatusMessage.jsx";
 import { isAtMax, togglePick } from "./picks.js";
-
-const SECTIONS = [
-  { key: "trending", title: "Trending this week" },
-  { key: "popular", title: "Most popular" },
-  { key: "all_time", title: "All-time favourites" },
-];
+import { useMovieSearch } from "./useMovieSearch.js";
 
 export default function App() {
   const [step, setStep] = useState("home"); // "home" | "result"
-  const [homeGrid, setHomeGrid] = useState(null);
-  const [gridError, setGridError] = useState(null);
-  const [picks, setPicks] = useState([]);
+  const [homeRows, setHomeRows] = useState(null);
+  const [rowsError, setRowsError] = useState(null);
+  // Whole movie objects, not just ids, so "Your picks" can show movies found by search.
+  const [pickedMovies, setPickedMovies] = useState([]);
+  const [query, setQuery] = useState("");
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [submitError, setSubmitError] = useState(null);
+  const search = useMovieSearch(query);
+  const picks = pickedMovies.map((movie) => movie.id);
 
-  const loadHomeGrid = useCallback(async () => {
-    setGridError(null);
+  const loadHomeRows = useCallback(async () => {
+    setRowsError(null);
     try {
-      setHomeGrid(await getMovies());
+      setHomeRows((await getMovies()).rows);
     } catch (error) {
-      setGridError(error.message);
+      setRowsError(error.message);
     }
   }, []);
 
   useEffect(() => {
     wakeBackend();
-    loadHomeGrid();
-  }, [loadHomeGrid]);
+    loadHomeRows();
+  }, [loadHomeRows]);
 
-  const toggle = (movieId) => {
+  const toggle = (movie) => {
     setSubmitError(null);
-    setPicks((current) => togglePick(current, movieId));
+    setPickedMovies((current) => {
+      const nextIds = togglePick(
+        current.map((picked) => picked.id),
+        movie.id,
+      );
+      return nextIds.map((id) => current.find((picked) => picked.id === id) ?? movie);
+    });
   };
+
+  const pickCards = (movies) =>
+    movies.map((movie) => {
+      const selected = picks.includes(movie.id);
+      return (
+        <MovieCard
+          key={movie.id}
+          movie={movie}
+          selected={selected}
+          disabled={isAtMax(picks) && !selected}
+          onToggle={toggle}
+        />
+      );
+    });
 
   const submitPicks = async () => {
     setSubmitError(null);
@@ -57,7 +78,8 @@ export default function App() {
   };
 
   const startOver = () => {
-    setPicks([]);
+    setPickedMovies([]);
+    setQuery("");
     setResult(null);
     setSubmitError(null);
     setStep("home");
@@ -77,22 +99,27 @@ export default function App() {
           <h1>Pick movies you love</h1>
           <p className="intro">Choose 5 to 10 favourites and get your taste persona and recommendations.</p>
 
-          {gridError && <StatusMessage message={gridError} onRetry={loadHomeGrid} />}
-          {!homeGrid && !gridError && (
+          {rowsError && <StatusMessage message={rowsError} onRetry={loadHomeRows} />}
+          {!homeRows && !rowsError && (
             <StatusMessage message="Loading movies… The server may need a minute to wake up." />
           )}
 
-          {homeGrid && (
+          {homeRows && (
             <>
-              {SECTIONS.map(({ key, title }) => (
-                <MovieSection
-                  key={key}
-                  title={title}
-                  movies={homeGrid[key]}
-                  picks={picks}
-                  atMax={isAtMax(picks)}
-                  onToggle={toggle}
-                />
+              <input
+                className="search"
+                type="search"
+                placeholder="Search for a movie…"
+                aria-label="Search for a movie"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+              />
+              <SearchResults search={search} renderCards={pickCards} />
+              {pickedMovies.length > 0 && <MovieRow title="Your picks">{pickCards(pickedMovies)}</MovieRow>}
+              {homeRows.map((row) => (
+                <MovieRow key={row.key} title={row.title}>
+                  {pickCards(row.movies)}
+                </MovieRow>
               ))}
               <PickBar picks={picks} loading={loading} error={submitError} onSubmit={submitPicks} />
             </>

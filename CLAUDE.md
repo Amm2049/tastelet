@@ -41,7 +41,8 @@ backend/
   app/
     api/           # FastAPI routes: thin — validate, call a service, return schema
     schemas/       # Pydantic request/response models
-    services/      # logic: recommender (fold-in + ranking), persona, genre sentence
+    services/      # logic: recommender (fold-in + ranking), persona, genre sentence,
+                   # v2: browse (picker rows), search, titles, result_rows (franchise + genre rows)
     repositories/  # loads artifacts / movie metadata; the only code touching files
     ml/            # NCF model class (shared by training and serving)
     core/          # config.py: constants + ALLOWED_ORIGINS from the environment
@@ -58,20 +59,55 @@ render.yaml        # Render blueprint for the backend (frontend goes on Vercel)
 Layer rule: api → services → repositories. Never skip a layer or import upward.
 
 ## Fixed technical decisions (from the spec — don't change without an ADR)
-- MovieLens ml-latest-small; IDs re-indexed 0..N-1; 80/10/10 split.
+- MovieLens ml-latest-small; IDs re-indexed 0..N-1; 80/10/10 split. **v3:** ml-32m, per-user time split (see v3 below).
 - Random seed **42** everywhere (numpy, torch, sklearn, K-means, fold-in negative sampling).
 - NCF in PyTorch: embeddings dim 32 → concat → MLP 64 → 32 → 1, ReLU, dropout 0.2; MSE, Adam (lr 1e-2).
 - Two NCF models (ADR 0001): rating model (real ratings) for RMSE; ranking model
   (+4 sampled negatives per rating, label 0.5) for Hit@10 and serving as `ncf_model.pt`.
   Negatives sampled ∝ rating_count^0.75 in training and fold-in (ADR 0002).
 - Cold start: freeze weights, optimize one user vector (~100 steps), picks = 5.0, plus random negatives.
+  **v3:** starts from the picks' fan centroids, not the average user (ADR 0006).
 - Personas: K-means on L2-normalized user embeddings, **K = 6** (genres ranked by lift, not counts;
-  no look-alike clusters at K = 6); nearest normalized centroid (cosine) at runtime.
+  no look-alike clusters at K = 6); nearest normalized centroid (cosine) at runtime. **v3: K = 7** (ADR 0007).
 - Match score = score / best pick score, clipped 0–100 (ADR 0003), not the plan's score / 5.
 - Fold-in is warmed up once at startup so the first user's request is fast.
-- Endpoints: `GET /movies`, `POST /recommend` (`movie_ids`: 5–10 ints), `GET /health`.
-  Bad input → 422 with a plain message.
+- Endpoints: `GET /movies` (picker rows), `GET /movies/search?q=` (v2), `POST /recommend`
+  (`movie_ids`: 5–10 ints), `GET /health`. Bad input → 422 with a plain message.
 - TMDB data is fetched **offline** into `movies_meta.json`; the running app calls no external API.
+  Notebook 01 writes the file; then `notebooks/add_tmdb_details.py` adds `original_language` and the
+  TMDB franchise (`collection_id`, `collection_name`). Re-running notebook 01 drops those, so always
+  run the script after it.
+
+## v2 (branch `v2`, worktree `D:\RSU\AI\tastelet-v2`; local only, not pushed or deployed)
+- Why: results felt "too old" because the v1 picker only offered old movies (see ADR 0004).
+- Picker rows (`services/browse.py`): Recent hits (2010+), one row per genre in `BROWSE_GENRES`
+  (2000+, 2010s first), Japanese animation right after Animation (and kept out of it). Each movie
+  appears once per page; the first row wins. Plus title search and a "Your picks" row.
+- Ranking: "prefer newer" boost `NEWER_BOOST = 0.3` (ADR 0004); Hit@10 unchanged.
+- Results page: Start over at the top, persona + genre sentence (keep it), hero = #1 match,
+  "Top picks for you" = rest of the top 20. The main list is always the model's own ranking.
+  Then "More from your franchises" (unpicked movies of the picks' TMDB franchises, may repeat a
+  top pick on purpose), then "Because you love <genre>" rows with a fun caption (never repeat a movie).
+- Titles are shown as "The Dark Knight", not MovieLens's "Dark Knight, The" (`services/titles.py`).
+- Theme: dark with a vibrant red accent; every colour is a token at the top of `frontend/src/index.css`.
+- Run v2 beside v1: backend on 8001 (`ALLOWED_ORIGINS=http://localhost:5174`), frontend on 5174
+  (`VITE_API_URL=http://localhost:8001`). `uvicorn --reload` hangs on Windows here; restart by hand.
+
+## v3 (branch `v3` from `v2`, worktree `D:\RSU\AI	astelet-v3`; local only, not pushed or deployed)
+- Why: v1/v2 movies end in 2018; v3 retrains on MovieLens **ml-32m** (movies to 2023) on Colab (T4 GPU).
+- Data: movies with ≥ 20 ratings (23,344 movies, 200,948 users); **per-user time split** 80/10/10 (each
+  user's oldest ratings train, newest test). Ranking model only (no rating model, no RMSE in v3).
+- Results (1,000 test users, 5 picks): popularity 0.211 · v3 cold start **0.224** with 997 different movies
+  in their top 10s vs popularity's 132. Full history 0.2162 vs popularity 0.1934 (5,000 users).
+- Cold start = fan start (ADR 0006) + popularity blend `BLEND_W = 4` (ADR 0005) + newer boost (to 2023).
+  Always check list **variety** and real hand-made lists, not only Hit@10 (it hid both problems).
+- Movies without a poster or year (339) stay in the model but are **hidden** (`hidden_idxs`) from picker,
+  search, results and franchise rows.
+- Notebooks: Colab `v3_01_explore`, `v3_02_train` (GPU), `v3_03_personas` (CPU). TMDB metadata:
+  `notebooks/build_movies_meta_v3.py` (one request per movie; inputs in git-ignored `data/processed_v3/`).
+- MovieLens titles can differ from today's: Avengers: Endgame is "Avengers: Infinity War - Part II".
+- Run like v2: backend 8001, frontend 5174.
+
 - Artifacts loaded **once** at startup (FastAPI lifespan). Response < 3 s on CPU.
 - Same picks → same persona and list (deterministic).
 - Privacy: picks are never stored or logged.

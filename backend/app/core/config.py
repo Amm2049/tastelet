@@ -23,3 +23,44 @@ FOLD_IN_L2 = 1e-3
 PICK_RATING = 5.0
 NEGATIVE_RATING = 0.5  # label the ranking model was trained with for negatives (ADR 0001)
 POPULARITY_EXPONENT = 0.75  # negatives sampled like training (ADR 0002)
+
+# "Prefer newer" boost (v2): added to the model score, growing linearly from 0 (FRESHNESS_FROM_YEAR or older)
+# to NEWER_BOOST (FRESHNESS_TO_YEAR, the catalog's last year: 2023 since v3 uses ml-32m). Top scores sit ~1-2 apart,
+# so 0.3 mostly reorders near-ties instead of overriding the user's taste (tried on the notebook 04 hand-made users).
+NEWER_BOOST = 0.3
+FRESHNESS_FROM_YEAR = 1980
+FRESHNESS_TO_YEAR = 2023
+
+# Popularity blend (v3, ADR 0005): BLEND_W * log-scaled popularity (0..1) is added to the score. From 5 picks the
+# model alone lost to "most popular" on Hit@10; w = 4 matches it on val while lists stay personal
+# (596 vs 132 different movies per 1,000 users). w = 16 scored best but gave nearly everyone the same list.
+BLEND_W = 4.0
+
+# Results page (v2): genre rows are filled from the top N_CANDIDATES; each movie appears once per page.
+N_CANDIDATES = 100
+N_GENRE_ROWS = 3
+GENRE_ROW_SIZE = 10
+MIN_ROW_SIZE = 4
+FRANCHISE_ROW_SIZE = 20  # no minimum: one sequel is still worth showing
+
+# Picker rows (v2), Netflix-style: recent hits, one row per genre, Japanese animation after Animation (browse.py).
+BROWSE_ROW_SIZE = 20
+RECENT_FROM_YEAR = 2010
+GENRE_ROW_FROM_YEAR = 2000
+# Rows rank by ratings per year since release (v3): ml-32m ends in 2023, so a 2021 movie had ~3 years to collect
+# ratings and a 2012 one ~12; by total ratings almost no 2020+ movie made a row.
+RATINGS_LAST_YEAR = 2023
+# One row per genre, titled with the genre's name, in this order.
+BROWSE_GENRES = [
+    "Action",
+    "Animation",  # before Comedy, or Shrek and Nemo fill the comedy row
+    "Comedy",
+    "Sci-Fi",
+    "Drama",
+    "Thriller",
+    "Horror",
+]
+
+MIN_SEARCH_LENGTH = 2
+MAX_SEARCH_LENGTH = 100
+MAX_SEARCH_RESULTS = 20

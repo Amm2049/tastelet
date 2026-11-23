@@ -1,8 +1,11 @@
 """Cold-start recommendations: fold in a new user from their picks, rank movies, assign a persona.
 
-Same method and numbers as notebook 04 (fold-in, ranking) and its persona cells (Phase 5).
+Same method and numbers as notebook 04 (fold-in, ranking) and its persona cells (Phase 5),
+plus the v2 "prefer newer" boost on top of the model's scores, and (v3) a fold-in that starts from the
+picks' fans instead of the average user (ADR 0006).
 """
 
+from collections.abc import Set
 from dataclasses import dataclass
 
 import numpy as np
@@ -11,12 +14,17 @@ import torch
 from torch import nn
 
 from app.core.config import (
+    BLEND_W,
     FOLD_IN_L2,
     FOLD_IN_LR,
     FOLD_IN_NEGATIVES,
     FOLD_IN_STEPS,
+    FRESHNESS_FROM_YEAR,
+    FRESHNESS_TO_YEAR,
+    N_CANDIDATES,
     N_RECOMMENDATIONS,
     NEGATIVE_RATING,
+    NEWER_BOOST,
     PICK_RATING,
     SEED,
 )
@@ -39,7 +47,12 @@ class Recommendation:
 @dataclass(frozen=True)
 class RecommendationResult:
     persona_id: int
-    recommendations: list[Recommendation]
+    ranked: list[Recommendation]  # best first, N_CANDIDATES long; the results page draws its genre rows from it
+    match_by_idx: list[int]  # match % of every movie (picks: 0), for rows outside the ranking (franchises)
+
+    @property
+    def recommendations(self) -> list[Recommendation]:
+        return self.ranked[:N_RECOMMENDATIONS]
 
 
 def to_movie_indices(movie_ids: list[int], movie_idx_by_id: dict[int, int]) -> list[int]:
@@ -50,11 +63,23 @@ def to_movie_indices(movie_ids: list[int], movie_idx_by_id: dict[int, int]) -> l
     return sorted(movie_idx_by_id[movie_id] for movie_id in movie_ids)
 
 
+def fan_start(picks: list[int], fan_centroids: npt.NDArray[np.float32]) -> torch.Tensor:
+    """Fold-in start: the mean of the picks' fan centroids, shape (1, dim) (ADR 0006).
+
+    From the average user the fold-in could not move for many recent movies (Marvel picks stayed at 0.6).
+    """
+    return torch.from_numpy(fan_centroids[picks].mean(axis=0, keepdims=True))
+
+
 def fold_in_user_vector(
-    model: NCF, picks: list[int], negative_weights: npt.NDArray[np.float64], rng: np.random.Generator
+    model: NCF,
+    picks: list[int],
+    start: torch.Tensor,
+    negative_weights: npt.NDArray[np.float64],
+    rng: np.random.Generator,
 ) -> torch.Tensor:
-    """Learn one user vector (model frozen) so picks score PICK_RATING and sampled other movies NEGATIVE_RATING."""
-    user_vec = nn.Parameter(model.user_embedding.weight.mean(dim=0, keepdim=True).clone())
+    """Learn one user vector from `start` (model frozen): picks -> PICK_RATING, sampled others -> NEGATIVE_RATING."""
+    user_vec = nn.Parameter(start.clone())
     optimizer = torch.optim.Adam([user_vec], lr=FOLD_IN_LR)
 
     unpicked = np.setdiff1d(np.arange(len(negative_weights)), picks)
@@ -82,15 +107,35 @@ def match_percents(scores: npt.NDArray[np.float32], best_pick_score: float) -> n
     return np.clip(scores / reference * 100, 0, 100).round().astype(np.int64)
 
 
-def top_recommendations(model: NCF, user_vec: torch.Tensor, picks: list[int]) -> list[Recommendation]:
+def newer_boosts(years: npt.NDArray[np.int64]) -> npt.NDArray[np.float64]:
+    """0 for FRESHNESS_FROM_YEAR or older, rising linearly to NEWER_BOOST at FRESHNESS_TO_YEAR (v2)."""
+    freshness = (years - FRESHNESS_FROM_YEAR) / (FRESHNESS_TO_YEAR - FRESHNESS_FROM_YEAR)
+    return NEWER_BOOST * np.clip(freshness, 0.0, 1.0)
+
+
+def score_bonuses(years: npt.NDArray[np.int64], scaled_popularity: npt.NDArray[np.float64]) -> npt.NDArray[np.float32]:
+    """Added to every model score: "prefer newer" (ADR 0004) + popularity blend (ADR 0005)."""
+    return (newer_boosts(years) + BLEND_W * scaled_popularity).astype(np.float32)
+
+
+def rank_movies(
+    model: NCF, user_vec: torch.Tensor, picks: list[int], bonuses: npt.NDArray[np.float32], hidden_idxs: Set[int]
+) -> tuple[list[Recommendation], list[int]]:
+    """Best N_CANDIDATES movies for the user (picks and hidden movies excluded), and the match % of every movie.
+
+    The first N_RECOMMENDATIONS of the ranking are the main list.
+    """
     n_movies = model.movie_embedding.num_embeddings
     with torch.no_grad():
-        scores = model.score_vec(user_vec.expand(n_movies, -1), torch.arange(n_movies)).numpy()
+        model_scores = model.score_vec(user_vec.expand(n_movies, -1), torch.arange(n_movies)).numpy()
+    # Picks get the bonuses too, so the match % reference (best pick) is on the same scale.
+    scores = model_scores + bonuses
     best_pick_score = float(scores[picks].max())
-    scores[picks] = -np.inf  # never recommend a movie the user already picked
-    top = np.argsort(-scores, kind="stable")[:N_RECOMMENDATIONS]  # stable: ties break the same way every run
-    matches = match_percents(scores[top], best_pick_score)
-    return [Recommendation(int(idx), int(match)) for idx, match in zip(top, matches, strict=True)]
+    scores[picks] = -np.inf  # never recommend a movie the user already picked (its match % clips to 0)
+    scores[list(hidden_idxs)] = -np.inf  # no poster or year: never shown (v3)
+    matches = match_percents(scores, best_pick_score)
+    top = np.argsort(-scores, kind="stable")[:N_CANDIDATES]  # stable: ties break the same way every run
+    return [Recommendation(int(idx), int(matches[idx])) for idx in top], matches.tolist()
 
 
 def assign_persona(user_vec: torch.Tensor, unit_centroids: npt.NDArray[np.float64]) -> int:
@@ -101,8 +146,10 @@ def assign_persona(user_vec: torch.Tensor, unit_centroids: npt.NDArray[np.float6
 def recommend_for_picks(artifacts: Artifacts, movie_ids: list[int]) -> RecommendationResult:
     picks = to_movie_indices(movie_ids, artifacts.movie_idx_by_id)
     rng = np.random.default_rng(SEED)  # new per request: deterministic and safe with concurrent requests
-    user_vec = fold_in_user_vector(artifacts.model, picks, artifacts.negative_weights, rng)
+    start = fan_start(picks, artifacts.fan_centroids)
+    user_vec = fold_in_user_vector(artifacts.model, picks, start, artifacts.negative_weights, rng)
+    bonuses = score_bonuses(artifacts.movie_years, artifacts.scaled_popularity)
+    ranked, match_by_idx = rank_movies(artifacts.model, user_vec, picks, bonuses, artifacts.hidden_idxs)
     return RecommendationResult(
-        persona_id=assign_persona(user_vec, artifacts.unit_centroids),
-        recommendations=top_recommendations(artifacts.model, user_vec, picks),
+        persona_id=assign_persona(user_vec, artifacts.unit_centroids), ranked=ranked, match_by_idx=match_by_idx
     )

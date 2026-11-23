@@ -1,62 +1,72 @@
 [
   {
     "id": 0,
-    "name": "The Classic Romantic",
-    "description": "Big feelings and sweeping stories: musicals, westerns and romance.",
+    "name": "The Rom-Com Regular",
+    "description": "Feel-good love stories and big-hearted comedies you could rewatch any night.",
     "top_genres": [
-      "Western",
-      "Musical",
-      "Romance"
+      "Documentary",
+      "Horror",
+      "Animation"
     ]
   },
   {
     "id": 1,
-    "name": "The Mind-Bender",
-    "description": "Dark dramas and mysteries that stay in your head long after the credits.",
+    "name": "The Comfort Watcher",
+    "description": "Warm, easy comedies and dramas that feel like a cosy night in.",
     "top_genres": [
-      "Mystery",
-      "Drama",
-      "Horror"
+      "Romance",
+      "Comedy",
+      "Drama"
     ]
   },
   {
     "id": 2,
-    "name": "The Case Cracker",
-    "description": "Crime, clues and twisty thrillers: you like to figure it out first.",
+    "name": "The Starship Captain",
+    "description": "Star Trek, space missions and classic sci-fi: you boldly go.",
     "top_genres": [
-      "Crime",
-      "Mystery",
-      "Thriller"
+      "Horror",
+      "Sci-Fi",
+      "Action"
     ]
   },
   {
     "id": 3,
     "name": "The Film Buff",
-    "description": "Film noir, documentaries and the classics most people never got around to.",
+    "description": "Arthouse gems, film noir and the classics critics still talk about.",
     "top_genres": [
       "Film-Noir",
       "Documentary",
-      "Western"
+      "Musical"
     ]
   },
   {
     "id": 4,
-    "name": "The Dreamer",
-    "description": "Animation, family films and fantasy worlds you would happily move into.",
+    "name": "The Case Cracker",
+    "description": "Gritty crime and slow-burn thrillers: the darker the story, the better.",
     "top_genres": [
-      "Animation",
-      "Children",
-      "Fantasy"
+      "Crime",
+      "Mystery",
+      "Film-Noir"
     ]
   },
   {
     "id": 5,
-    "name": "The Thrill Seeker",
-    "description": "Scares and sci-fi: if it makes your heart race, you are in.",
+    "name": "The Blockbuster Hero",
+    "description": "Superheroes, big franchises and epic adventures made for the biggest screen.",
     "top_genres": [
-      "Horror",
       "Sci-Fi",
-      "Western"
+      "Adventure",
+      "Animation"
+    ]
+  },
+  {
+    "id": 6,
+    "name": "The Action Junkie",
+    "description": "Thrillers and action: hackers, hostages and heroes racing the clock.",
+    "top_genres": [
+      "Western",
+      "Musical",
+      "Children"
     ]
   }
 ]

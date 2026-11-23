@@ -2,6 +2,40 @@
 
 One entry per work session: yesterday / today / blockers. Newest first.
 
+## 2026-11-23
+- Yesterday: v3 steps 1–4 on Colab (ml-32m, MIN_RATINGS 20, per-user time split, GPU training; val Hit@10 0.2442).
+- Today: v3 step 5 evaluation. Test Hit@10 NCF 0.2162 vs popularity 0.1934. Cold start (5 picks) lost to
+  popularity (0.159 vs 0.211); ruled out fold-in settings, pick choice and the newer boost one by one.
+  Fix: blend scaled popularity into the cold-start score, w = 4 chosen on val + list variety (ADR 0005):
+  test 0.226, 596 different movies vs popularity's 132.
+- Then: hand-made lists were wrong (Marvel fan got Fight Club). Ruled out split, blend, dead ReLUs and the
+  model itself; cause = fold-in starting at the average user can't move. Fix: start from the picks' fans
+  (ADR 0006): Marvel fan gets Marvel; test Hit@10 unchanged (0.224), variety 596 -> 997 movies.
+- Learned: a measurable symptom (low pick scores) is not always the cause; Hit@10 can be won by giving
+  everyone the popular list, so always check variety too; tune on val, test once (the fan-start val gain
+  of +0.033 did not hold on test); look at real lists, they caught what Hit@10 hid.
+- Then: K = 7 personas (ADR 0007; clusters mix era and taste). Step 6: one-pass TMDB metadata for 23,344 movies
+  (321 without poster, 18 without year: hidden in the app). Step 7: backend serves v3 (hidden movies,
+  fan start, popularity blend); 83 tests; backend reproduces the notebook's Marvel pick score (4.36) exactly.
+- Learned: control checks (a known number that must repeat) caught nothing wrong today, which is the point:
+  every new measurement was trusted because its control matched.
+- Blockers: Colab notebooks `v3_01_explore`, `v3_02_train`, `v3_03_personas` are not in the repo yet;
+  real-app check in the browser still to do.
+
+## 2026-11-22
+- Today: started v2 in a git worktree (`tastelet-v2`, branch `v2`, local only). Billy found "too many old
+  movies" in the results. Reproduced with three pick sets: the model follows the picks' era. Real cause:
+  the v1 picker offered mostly old movies ("Trending this week" matched 0 movies and fell back to
+  "Most popular", i.e. 90s classics).
+- Built Netflix-style rows: picker (Recent hits, genre rows with 2010s first, Japanese animation, search)
+  and results (hero, Top picks, "More from your franchises", captioned genre rows, Start over at the top).
+  TMDB language and franchise data fetched offline by `notebooks/add_tmdb_details.py`.
+- Added a "prefer newer" boost (0.3). Measured with `notebooks/eval_newer_boost.py`: Hit@10 unchanged
+  (0.4667 warm, 0.41 cold start); share of 2010+ results only 7% → 8% (ADR 0004).
+- Learned: reproduce a bug before fixing it; the problem was in the input, not the model. Reproduce the
+  old metric exactly before trusting a new one. Check every commit on its own, not just the last.
+- Blockers: no movies after 2018 without retraining on `ml-32m`.
+
 ## 2026-11-19
 - Yesterday: away since Oct 27; deadline moved to Nov 23, so scope is trimmed (local demo, no deploy).
 - Today: Phase 5 personas (#14). K-means on normalized user vectors; silhouette ~0.1 for every K, so chose by readability. Counting genres gave every cluster Drama/Comedy/Action, so genres are ranked by lift instead. K=6: no look-alike clusters (K=8 had 5 pairs). Saved `centroids.json` and `personas.json`; the three hand-made users land in The Dreamer, The Thrill Seeker and The Case Cracker.
