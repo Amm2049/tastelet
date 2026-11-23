@@ -38,13 +38,17 @@ RATING_COUNTS = np.array([5.0, 200.0, 50.0, 100.0])
 
 
 def test_search_puts_title_prefix_matches_first_then_the_most_rated() -> None:
-    assert search_movies("toy", MOVIES, RATING_COUNTS) == [1, 3, 0, 2]
+    assert search_movies("toy", MOVIES, RATING_COUNTS, frozenset()) == [1, 3, 0, 2]
 
 
 @pytest.mark.parametrize("query", ["", " ", "t", "-", "zzz"])
 def test_search_returns_nothing_for_short_or_unmatched_queries(query: str) -> None:
-    assert search_movies(query, MOVIES, RATING_COUNTS) == []
+    assert search_movies(query, MOVIES, RATING_COUNTS, frozenset()) == []
 
 
 def test_search_ignores_text_past_the_length_cap() -> None:
-    assert search_movies("toy" + " " * 200 + "zzz", MOVIES, RATING_COUNTS) == [1, 3, 0, 2]
+    assert search_movies("toy" + " " * 200 + "zzz", MOVIES, RATING_COUNTS, frozenset()) == [1, 3, 0, 2]
+
+
+def test_search_skips_hidden_movies() -> None:
+    assert search_movies("toy", MOVIES, RATING_COUNTS, frozenset({1})) == [3, 0, 2]

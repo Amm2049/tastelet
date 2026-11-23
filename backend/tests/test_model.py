@@ -10,8 +10,8 @@ CHECKPOINT_PATH = Path(__file__).resolve().parents[1] / "artifacts" / "ncf_model
 def test_load_ncf_rebuilds_the_trained_model() -> None:
     model = load_ncf(CHECKPOINT_PATH)
 
-    assert model.user_embedding.num_embeddings == 610
-    assert model.movie_embedding.num_embeddings == 3636
+    assert model.user_embedding.num_embeddings == 200_948
+    assert model.movie_embedding.num_embeddings == 23_344
     assert not model.training
     assert not any(p.requires_grad for p in model.parameters())
 

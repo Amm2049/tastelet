@@ -4,6 +4,7 @@ Same method and numbers as notebook 04 (fold-in, ranking) and its persona cells 
 plus the v2 "prefer newer" boost on top of the model's scores.
 """
 
+from collections.abc import Set
 from dataclasses import dataclass
 
 import numpy as np
@@ -99,9 +100,9 @@ def newer_boosts(years: npt.NDArray[np.int64]) -> npt.NDArray[np.float64]:
 
 
 def rank_movies(
-    model: NCF, user_vec: torch.Tensor, picks: list[int], years: npt.NDArray[np.int64]
+    model: NCF, user_vec: torch.Tensor, picks: list[int], years: npt.NDArray[np.int64], hidden_idxs: Set[int]
 ) -> tuple[list[Recommendation], list[int]]:
-    """Best N_CANDIDATES movies for the user (picks excluded), and the match % of every movie.
+    """Best N_CANDIDATES movies for the user (picks and hidden movies excluded), and the match % of every movie.
 
     The first N_RECOMMENDATIONS of the ranking are the main list.
     """
@@ -112,6 +113,7 @@ def rank_movies(
     scores = model_scores + newer_boosts(years).astype(np.float32)
     best_pick_score = float(scores[picks].max())
     scores[picks] = -np.inf  # never recommend a movie the user already picked (its match % clips to 0)
+    scores[list(hidden_idxs)] = -np.inf  # no poster or year: never shown (v3)
     matches = match_percents(scores, best_pick_score)
     top = np.argsort(-scores, kind="stable")[:N_CANDIDATES]  # stable: ties break the same way every run
     return [Recommendation(int(idx), int(matches[idx])) for idx in top], matches.tolist()
@@ -126,7 +128,7 @@ def recommend_for_picks(artifacts: Artifacts, movie_ids: list[int]) -> Recommend
     picks = to_movie_indices(movie_ids, artifacts.movie_idx_by_id)
     rng = np.random.default_rng(SEED)  # new per request: deterministic and safe with concurrent requests
     user_vec = fold_in_user_vector(artifacts.model, picks, artifacts.negative_weights, rng)
-    ranked, match_by_idx = rank_movies(artifacts.model, user_vec, picks, artifacts.movie_years)
+    ranked, match_by_idx = rank_movies(artifacts.model, user_vec, picks, artifacts.movie_years, artifacts.hidden_idxs)
     return RecommendationResult(
         persona_id=assign_persona(user_vec, artifacts.unit_centroids), ranked=ranked, match_by_idx=match_by_idx
     )

@@ -25,11 +25,11 @@ NEGATIVE_RATING = 0.5  # label the ranking model was trained with for negatives 
 POPULARITY_EXPONENT = 0.75  # negatives sampled like training (ADR 0002)
 
 # "Prefer newer" boost (v2): added to the model score, growing linearly from 0 (FRESHNESS_FROM_YEAR or older)
-# to NEWER_BOOST (FRESHNESS_TO_YEAR, the catalog's last year). Top scores sit ~1-2 apart, so 0.3 mostly
-# reorders near-ties instead of overriding the user's taste (tried on the notebook 04 hand-made users).
+# to NEWER_BOOST (FRESHNESS_TO_YEAR, the catalog's last year: 2023 since v3 uses ml-32m). Top scores sit ~1-2 apart,
+# so 0.3 mostly reorders near-ties instead of overriding the user's taste (tried on the notebook 04 hand-made users).
 NEWER_BOOST = 0.3
 FRESHNESS_FROM_YEAR = 1980
-FRESHNESS_TO_YEAR = 2018
+FRESHNESS_TO_YEAR = 2023
 
 # Results page (v2): genre rows are filled from the top N_CANDIDATES; each movie appears once per page.
 N_CANDIDATES = 100

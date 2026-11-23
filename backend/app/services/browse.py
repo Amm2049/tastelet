@@ -5,7 +5,7 @@ v1 showed "Trending this week" (TMDB trending in 2026 matched none of our <=2018
 pick old movies, and old picks give old recommendations.
 """
 
-from collections.abc import Callable
+from collections.abc import Callable, Set
 from dataclasses import dataclass
 from typing import Any
 
@@ -65,12 +65,14 @@ def _row_specs() -> list[tuple[str, str, MovieFilter, bool]]:
     return specs
 
 
-def build_browse_rows(movies_by_idx: list[dict[str, Any]], rating_counts: npt.NDArray[np.float64]) -> list[MovieRow]:
-    """Rows of popular matching movies; each movie appears once on the page (first row wins)."""
+def build_browse_rows(
+    movies_by_idx: list[dict[str, Any]], rating_counts: npt.NDArray[np.float64], hidden_idxs: Set[int]
+) -> list[MovieRow]:
+    """Rows of popular matching movies; each movie appears once on the page (first row wins), hidden ones never."""
     by_popularity = np.argsort(-rating_counts, kind="stable").tolist()
     # Stable sort, so each group keeps its popularity order.
     newer_first = sorted(by_popularity, key=lambda idx: movies_by_idx[idx]["year"] < RECENT_FROM_YEAR)
-    shown: set[int] = set()
+    shown: set[int] = set(hidden_idxs)  # treated as already shown, so no row takes them
     rows: list[MovieRow] = []
 
     for key, title, keep, is_newer_first in _row_specs():

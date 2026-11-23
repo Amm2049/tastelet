@@ -18,7 +18,7 @@ def test_browse_rows_start_with_recent_hits_by_popularity() -> None:
     movies = [movie(2015, ["Drama"]) for _ in range(6)] + [movie(2005, ["Drama"]) for _ in range(6)]
     counts = np.arange(12, dtype=float)  # higher index = more ratings
 
-    rows = build_browse_rows(movies, counts)
+    rows = build_browse_rows(movies, counts, frozenset())
 
     assert rows[0].key == "recent"
     assert rows[0].movie_idxs == [5, 4, 3, 2, 1, 0]
@@ -32,7 +32,7 @@ def test_japanese_animation_gets_its_own_row_and_leaves_the_animation_row() -> N
     japanese_live_action = [movie(2003, ["Drama"], "ja")]
     movies = western + anime + japanese_live_action
 
-    rows = {row.key: row.movie_idxs for row in build_browse_rows(movies, np.ones(len(movies)))}
+    rows = {row.key: row.movie_idxs for row in build_browse_rows(movies, np.ones(len(movies)), frozenset())}
 
     assert rows["animation"] == list(range(MIN_ROW_SIZE))
     assert rows["japanese_animation"] == list(range(MIN_ROW_SIZE, 2 * MIN_ROW_SIZE))
@@ -46,7 +46,7 @@ def test_japanese_animation_row_sits_right_after_animation() -> None:
         *[movie(2005, ["Action"]) for _ in range(MIN_ROW_SIZE)],
     ]
 
-    rows = build_browse_rows(movies, np.ones(len(movies)))
+    rows = build_browse_rows(movies, np.ones(len(movies)), frozenset())
 
     assert [row.key for row in rows] == ["action", "animation", "japanese_animation", "comedy"]
 
@@ -57,7 +57,7 @@ def test_genre_rows_show_2010s_movies_before_more_rated_2000s_ones() -> None:
     counts = np.array([1000.0] * BROWSE_ROW_SIZE + [300.0, 2.0, 200.0, 1.0])
     first_comedy = BROWSE_ROW_SIZE
 
-    rows = build_browse_rows(popular_recent_dramas + comedies, counts)
+    rows = build_browse_rows(popular_recent_dramas + comedies, counts, frozenset())
 
     comedy_row = next(row for row in rows if row.key == "comedy")
     years = [comedies[idx - first_comedy]["year"] for idx in comedy_row.movie_idxs]
@@ -67,13 +67,13 @@ def test_genre_rows_show_2010s_movies_before_more_rated_2000s_ones() -> None:
 def test_browse_rows_skip_rows_too_short_to_look_like_a_row() -> None:
     movies = [movie(2015, ["Drama"]) for _ in range(MIN_ROW_SIZE - 1)]
 
-    assert build_browse_rows(movies, np.ones(len(movies))) == []
+    assert build_browse_rows(movies, np.ones(len(movies)), frozenset()) == []
 
 
 def test_browse_rows_are_capped_and_show_each_movie_once() -> None:
     movies = [movie(2005, ["Action", "Comedy"]) for _ in range(3 * BROWSE_ROW_SIZE)]
 
-    rows = build_browse_rows(movies, np.ones(len(movies)))
+    rows = build_browse_rows(movies, np.ones(len(movies)), frozenset())
 
     shown = [idx for row in rows for idx in row.movie_idxs]
     assert [row.key for row in rows] == ["action", "comedy"]
@@ -113,3 +113,12 @@ def test_every_genre_in_the_catalog_has_its_own_caption(artifacts: Artifacts) ->
     catalog_genres = {genre for movie in artifacts.movies_by_idx for genre in movie["genres"]} - NOT_A_GENRE
 
     assert catalog_genres <= set(GENRE_CAPTIONS)
+
+
+def test_browse_rows_never_show_hidden_movies() -> None:
+    movies = [movie(2015, ["Drama"]) for _ in range(MIN_ROW_SIZE + 2)]
+
+    rows = build_browse_rows(movies, np.arange(len(movies), dtype=float), frozenset({len(movies) - 1, 0}))
+
+    shown = {idx for row in rows for idx in row.movie_idxs}
+    assert shown == set(range(1, len(movies) - 1))  # the most rated one is hidden too

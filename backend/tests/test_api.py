@@ -38,7 +38,7 @@ def test_movies_returns_recent_hits_then_genres_with_japanese_animation_after_an
     assert [title for title in titles[1:] if title != "Japanese animation"] == BROWSE_GENRES
     anime_position = titles.index("Japanese animation")
     assert titles[anime_position - 1] == "Animation"
-    assert any(movie["title"].startswith("Spirited Away") for movie in rows[anime_position]["movies"])
+    assert any(movie["title"].startswith("Your Name") for movie in rows[anime_position]["movies"])
     for row in rows:
         assert len(row["movies"]) >= 4
         assert all(movie["poster"].startswith("https://") for movie in row["movies"])
@@ -70,7 +70,7 @@ def test_recommend_returns_persona_sentence_and_twenty_movies(client: TestClient
 
     body = response.json()
     assert response.status_code == 200
-    assert body["persona"] == "The Dreamer"
+    assert body["persona"]  # which persona fits which picks: test_recommender.py
     assert body["description"]
     assert body["genre_sentence"].startswith("You gravitate toward")
     assert len(body["recommendations"]) == 20

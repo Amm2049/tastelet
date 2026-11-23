@@ -62,7 +62,7 @@ def health() -> HealthResponse:
 @router.get("/movies")
 def home_rows(request: Request) -> HomeRowsResponse:
     artifacts = _artifacts(request)
-    rows = build_browse_rows(artifacts.movies_by_idx, artifacts.rating_counts)
+    rows = build_browse_rows(artifacts.movies_by_idx, artifacts.rating_counts, artifacts.hidden_idxs)
     return HomeRowsResponse(
         rows=[
             MovieRowResponse(
@@ -78,7 +78,7 @@ def home_rows(request: Request) -> HomeRowsResponse:
 @router.get("/movies/search")
 def search(request: Request, q: str = "") -> SearchResponse:
     artifacts = _artifacts(request)
-    idxs = search_movies(q, artifacts.movies_by_idx, artifacts.rating_counts)
+    idxs = search_movies(q, artifacts.movies_by_idx, artifacts.rating_counts, artifacts.hidden_idxs)
     return SearchResponse(movies=[_movie_card(artifacts.movies_by_idx[idx]) for idx in idxs])
 
 

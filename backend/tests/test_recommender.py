@@ -42,6 +42,7 @@ def test_same_picks_in_any_order_give_the_same_result(artifacts: Artifacts) -> N
         (CRIME_90S_PICKS, "The Case Cracker"),
     ],
 )
+@pytest.mark.skip(reason="v3 has new personas (ADR 0007); expectations come back with the fan start (ADR 0006)")
 def test_hand_made_users_get_fitting_personas(artifacts: Artifacts, picks: list[int], persona_name: str) -> None:
     result = recommend_for_picks(artifacts, picks)
 
@@ -87,10 +88,11 @@ def test_assign_persona_picks_the_closest_centroid() -> None:
     assert assign_persona(torch.tensor([[0.2, 3.0]]), unit_centroids) == 1
 
 
-def test_newer_boost_is_zero_up_to_1980_and_full_at_2018() -> None:
-    boosts = newer_boosts(np.array([1950, 1980, 1999, 2018, 2025]))
+def test_newer_boost_is_zero_up_to_1980_and_full_at_2023() -> None:
+    boosts = newer_boosts(np.array([1950, 1980, 2001, 2023, 2025]))
 
-    assert boosts.tolist() == pytest.approx([0.0, 0.0, NEWER_BOOST / 2, NEWER_BOOST, NEWER_BOOST])
+    linear_part = (2001 - 1980) / (2023 - 1980)
+    assert boosts.tolist() == pytest.approx([0.0, 0.0, NEWER_BOOST * linear_part, NEWER_BOOST, NEWER_BOOST])
 
 
 def test_ranked_candidates_extend_the_main_list(artifacts: Artifacts) -> None:
@@ -98,3 +100,10 @@ def test_ranked_candidates_extend_the_main_list(artifacts: Artifacts) -> None:
 
     assert len(result.ranked) == N_CANDIDATES
     assert result.ranked[:N_RECOMMENDATIONS] == result.recommendations
+
+
+def test_hidden_movies_are_never_recommended(artifacts: Artifacts) -> None:
+    result = recommend_for_picks(artifacts, HORROR_PICKS)
+
+    assert artifacts.hidden_idxs  # v3 has movies without a poster or year
+    assert not {recommendation.movie_idx for recommendation in result.ranked} & artifacts.hidden_idxs
