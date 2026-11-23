@@ -2,6 +2,14 @@
 
 One entry per work session: yesterday / today / blockers. Newest first.
 
+## 2026-11-24
+- Yesterday: v3 steps 5–7 (evaluation, TMDB metadata, backend); committed the three Colab notebooks.
+- Today: picker rows rank by ratings per year since release, so 2019–2022 movies show up. Deployed v2 + v3
+  (PR #25, merge commit): live on Render + Vercel, Marvel picks -> The Blockbuster Hero in 0.85 s. Removed the
+  v2/v3 worktrees; tagged v3.0.
+- Learned: measure memory before deploying to a small server (v3 peaks at ~401 MB of Render's 512 MB).
+- Blockers: none. Next: presentation slides.
+
 ## 2026-11-23
 - Yesterday: v3 steps 1–4 on Colab (ml-32m, MIN_RATINGS 20, per-user time split, GPU training; val Hit@10 0.2442).
 - Today: v3 step 5 evaluation. Test Hit@10 NCF 0.2162 vs popularity 0.1934. Cold start (5 picks) lost to

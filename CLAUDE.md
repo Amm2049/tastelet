@@ -78,7 +78,7 @@ Layer rule: api → services → repositories. Never skip a layer or import upwa
   TMDB franchise (`collection_id`, `collection_name`). Re-running notebook 01 drops those, so always
   run the script after it.
 
-## v2 (branch `v2`, worktree `D:\RSU\AI\tastelet-v2`; local only, not pushed or deployed)
+## v2 (picker + results page; merged into `main` with v3 and live since 2026-11-24, PR #25)
 - Why: results felt "too old" because the v1 picker only offered old movies (see ADR 0004).
 - Picker rows (`services/browse.py`): Recent hits (2010+), one row per genre in `BROWSE_GENRES`
   (2000+, 2010s first), Japanese animation right after Animation (and kept out of it). Each movie
@@ -90,10 +90,9 @@ Layer rule: api → services → repositories. Never skip a layer or import upwa
   top pick on purpose), then "Because you love <genre>" rows with a fun caption (never repeat a movie).
 - Titles are shown as "The Dark Knight", not MovieLens's "Dark Knight, The" (`services/titles.py`).
 - Theme: dark with a vibrant red accent; every colour is a token at the top of `frontend/src/index.css`.
-- Run v2 beside v1: backend on 8001 (`ALLOWED_ORIGINS=http://localhost:5174`), frontend on 5174
-  (`VITE_API_URL=http://localhost:8001`). `uvicorn --reload` hangs on Windows here; restart by hand.
+- `uvicorn --reload` hangs on Windows here; restart the backend by hand.
 
-## v3 (branch `v3` from `v2`, worktree `D:\RSU\AI	astelet-v3`; local only, not pushed or deployed)
+## v3 (live since 2026-11-24, PR #25, tag `v3.0`; work in `D:\RSU\AI\tastelet` on `main`, the v2/v3 worktrees are gone)
 - Why: v1/v2 movies end in 2018; v3 retrains on MovieLens **ml-32m** (movies to 2023) on Colab (T4 GPU).
 - Data: movies with ≥ 20 ratings (23,344 movies, 200,948 users); **per-user time split** 80/10/10 (each
   user's oldest ratings train, newest test). Ranking model only (no rating model, no RMSE in v3).
@@ -106,7 +105,12 @@ Layer rule: api → services → repositories. Never skip a layer or import upwa
 - Notebooks: Colab `v3_01_explore`, `v3_02_train` (GPU), `v3_03_personas` (CPU). TMDB metadata:
   `notebooks/build_movies_meta_v3.py` (one request per movie; inputs in git-ignored `data/processed_v3/`).
 - MovieLens titles can differ from today's: Avengers: Endgame is "Avengers: Infinity War - Part II".
-- Run like v2: backend 8001, frontend 5174.
+- Picker rows rank by **ratings per year since release** (`RATINGS_LAST_YEAR = 2023`), or almost no 2020+
+  movie made a row (they had little time to collect ratings).
+- New releases not in MovieLens can't be added: NCF has no vector for a movie without ratings (item cold
+  start). A content-based model would be needed; it's future work, not in scope.
+- Memory: peak ~401 MB locally (v1 293 MB) vs Render free 512 MB. If Render runs out, stop keeping the 200k
+  user vectors after load (serving only needs movie vectors, centroids and fan centroids).
 
 - Artifacts loaded **once** at startup (FastAPI lifespan). Response < 3 s on CPU.
 - Same picks → same persona and list (deterministic).
