@@ -6,6 +6,8 @@ Pick 5–10 movies you love; a neural network gives you a taste persona, a favou
 AI course term project (Rangsit University): neural collaborative filtering (NCF) on MovieLens,
 cold-start fold-in for new users, and K-means personas.
 
+Live: https://tastelet.vercel.app (the free backend sleeps when idle; the first visit can take a minute).
+
 ## Quick start (local)
 
 Needs Python 3.10 and Node 22.
@@ -45,7 +47,7 @@ Training is offline in `notebooks/` (Colab or local); its outputs live in `backe
 | NCF ranking model (shipped) | – | 0.4667 |
 | NCF cold start, 5 picks (100 users) | – | 0.41 (popularity 0.36) |
 
-**v3** (this branch) retrains on MovieLens ml-32m (23,344 movies up to 2023) with a per-user time split,
+**v3** (live since 2026-11-24) retrains on MovieLens ml-32m (23,344 movies up to 2023) with a per-user time split,
 so the test set is each user's newest ratings:
 
 | v3, test set | Hit@10 | Different movies in 1,000 users' top 10s |
