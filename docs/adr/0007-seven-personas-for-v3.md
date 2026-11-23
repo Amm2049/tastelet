@@ -55,6 +55,10 @@ unchanged (nearest normalized centroid by cosine).
   the rom-com persona; cluster 0's genre lift (Documentary, Horror, Animation) does not match its movies.
   The genre sentence under the persona comes from the picks, so the page still says "horror".
   The romance fan lands in the Blockbuster cluster because the picks are recent rather than because of genre.
+  In the backend (step 7), classic animation picks (Toy Story, The Lion King, Aladdin, Finding Nemo, Monsters, Inc.)
+  get The Action Junkie and classic horror picks (The Shining, The Exorcist, Halloween…) The Starship Captain,
+  although their lists fit (Disney and Pixar; Ringu, Dawn of the Dead). The tests only lock in personas that fit
+  (Marvel picks -> The Blockbuster Hero, 90s crime -> The Case Cracker).
 - The backend reads the number of personas from the files (`unit_centroids` has shape (n_personas, dim)),
   so K = 7 needs no code change; step 7 copies `centroids_v3.json` / `personas_v3.json` into `backend/artifacts/`.
 - CLAUDE.md's fixed decision "K = 6" must say "K = 6 (v1), K = 7 (v3, ADR 0007)" when v3 is merged.

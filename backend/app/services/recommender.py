@@ -1,7 +1,8 @@
 """Cold-start recommendations: fold in a new user from their picks, rank movies, assign a persona.
 
 Same method and numbers as notebook 04 (fold-in, ranking) and its persona cells (Phase 5),
-plus the v2 "prefer newer" boost on top of the model's scores.
+plus the v2 "prefer newer" boost on top of the model's scores, and (v3) a fold-in that starts from the
+picks' fans instead of the average user (ADR 0006).
 """
 
 from collections.abc import Set
@@ -61,11 +62,23 @@ def to_movie_indices(movie_ids: list[int], movie_idx_by_id: dict[int, int]) -> l
     return sorted(movie_idx_by_id[movie_id] for movie_id in movie_ids)
 
 
+def fan_start(picks: list[int], fan_centroids: npt.NDArray[np.float32]) -> torch.Tensor:
+    """Fold-in start: the mean of the picks' fan centroids, shape (1, dim) (ADR 0006).
+
+    From the average user the fold-in could not move for many recent movies (Marvel picks stayed at 0.6).
+    """
+    return torch.from_numpy(fan_centroids[picks].mean(axis=0, keepdims=True))
+
+
 def fold_in_user_vector(
-    model: NCF, picks: list[int], negative_weights: npt.NDArray[np.float64], rng: np.random.Generator
+    model: NCF,
+    picks: list[int],
+    start: torch.Tensor,
+    negative_weights: npt.NDArray[np.float64],
+    rng: np.random.Generator,
 ) -> torch.Tensor:
-    """Learn one user vector (model frozen) so picks score PICK_RATING and sampled other movies NEGATIVE_RATING."""
-    user_vec = nn.Parameter(model.user_embedding.weight.mean(dim=0, keepdim=True).clone())
+    """Learn one user vector from `start` (model frozen): picks -> PICK_RATING, sampled others -> NEGATIVE_RATING."""
+    user_vec = nn.Parameter(start.clone())
     optimizer = torch.optim.Adam([user_vec], lr=FOLD_IN_LR)
 
     unpicked = np.setdiff1d(np.arange(len(negative_weights)), picks)
@@ -127,7 +140,8 @@ def assign_persona(user_vec: torch.Tensor, unit_centroids: npt.NDArray[np.float6
 def recommend_for_picks(artifacts: Artifacts, movie_ids: list[int]) -> RecommendationResult:
     picks = to_movie_indices(movie_ids, artifacts.movie_idx_by_id)
     rng = np.random.default_rng(SEED)  # new per request: deterministic and safe with concurrent requests
-    user_vec = fold_in_user_vector(artifacts.model, picks, artifacts.negative_weights, rng)
+    start = fan_start(picks, artifacts.fan_centroids)
+    user_vec = fold_in_user_vector(artifacts.model, picks, start, artifacts.negative_weights, rng)
     ranked, match_by_idx = rank_movies(artifacts.model, user_vec, picks, artifacts.movie_years, artifacts.hidden_idxs)
     return RecommendationResult(
         persona_id=assign_persona(user_vec, artifacts.unit_centroids), ranked=ranked, match_by_idx=match_by_idx

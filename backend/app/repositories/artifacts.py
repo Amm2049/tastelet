@@ -24,6 +24,7 @@ class Artifacts:
     movie_idxs_by_collection: dict[int, list[int]]  # TMDB franchise id -> its shown movies' indices (v2)
     hidden_idxs: frozenset[int]  # no poster or no year (v3): never shown in picker, search or results
     negative_weights: npt.NDArray[np.float64]  # fold-in negative sampling weight per movie index
+    fan_centroids: npt.NDArray[np.float32]  # (n_movies, dim): mean trained vector of the movie's fans (ADR 0006)
     unit_centroids: npt.NDArray[np.float64]  # (n_personas, dim), each row length 1
     personas: list[dict[str, Any]]  # position = persona id
     home_lists: dict[str, list[int]]  # list name -> MovieLens ids
@@ -65,6 +66,7 @@ def load_artifacts(artifacts_dir: Path) -> Artifacts:
         movie_idxs_by_collection=movie_idxs_by_collection,
         hidden_idxs=frozenset(hidden_idxs),
         negative_weights=rating_counts**POPULARITY_EXPONENT,
+        fan_centroids=np.load(artifacts_dir / "fan_centroids.npy"),
         unit_centroids=np.array(_read_json(artifacts_dir / "centroids.json")),
         personas=_read_json(artifacts_dir / "personas.json"),
         home_lists=meta["home_lists"],
