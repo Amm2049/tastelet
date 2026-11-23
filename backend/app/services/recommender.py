@@ -14,6 +14,7 @@ import torch
 from torch import nn
 
 from app.core.config import (
+    BLEND_W,
     FOLD_IN_L2,
     FOLD_IN_LR,
     FOLD_IN_NEGATIVES,
@@ -112,8 +113,13 @@ def newer_boosts(years: npt.NDArray[np.int64]) -> npt.NDArray[np.float64]:
     return NEWER_BOOST * np.clip(freshness, 0.0, 1.0)
 
 
+def score_bonuses(years: npt.NDArray[np.int64], scaled_popularity: npt.NDArray[np.float64]) -> npt.NDArray[np.float32]:
+    """Added to every model score: "prefer newer" (ADR 0004) + popularity blend (ADR 0005)."""
+    return (newer_boosts(years) + BLEND_W * scaled_popularity).astype(np.float32)
+
+
 def rank_movies(
-    model: NCF, user_vec: torch.Tensor, picks: list[int], years: npt.NDArray[np.int64], hidden_idxs: Set[int]
+    model: NCF, user_vec: torch.Tensor, picks: list[int], bonuses: npt.NDArray[np.float32], hidden_idxs: Set[int]
 ) -> tuple[list[Recommendation], list[int]]:
     """Best N_CANDIDATES movies for the user (picks and hidden movies excluded), and the match % of every movie.
 
@@ -122,8 +128,8 @@ def rank_movies(
     n_movies = model.movie_embedding.num_embeddings
     with torch.no_grad():
         model_scores = model.score_vec(user_vec.expand(n_movies, -1), torch.arange(n_movies)).numpy()
-    # Picks get the boost too, so the match % reference (best pick) is on the same scale.
-    scores = model_scores + newer_boosts(years).astype(np.float32)
+    # Picks get the bonuses too, so the match % reference (best pick) is on the same scale.
+    scores = model_scores + bonuses
     best_pick_score = float(scores[picks].max())
     scores[picks] = -np.inf  # never recommend a movie the user already picked (its match % clips to 0)
     scores[list(hidden_idxs)] = -np.inf  # no poster or year: never shown (v3)
@@ -142,7 +148,8 @@ def recommend_for_picks(artifacts: Artifacts, movie_ids: list[int]) -> Recommend
     rng = np.random.default_rng(SEED)  # new per request: deterministic and safe with concurrent requests
     start = fan_start(picks, artifacts.fan_centroids)
     user_vec = fold_in_user_vector(artifacts.model, picks, start, artifacts.negative_weights, rng)
-    ranked, match_by_idx = rank_movies(artifacts.model, user_vec, picks, artifacts.movie_years, artifacts.hidden_idxs)
+    bonuses = score_bonuses(artifacts.movie_years, artifacts.scaled_popularity)
+    ranked, match_by_idx = rank_movies(artifacts.model, user_vec, picks, bonuses, artifacts.hidden_idxs)
     return RecommendationResult(
         persona_id=assign_persona(user_vec, artifacts.unit_centroids), ranked=ranked, match_by_idx=match_by_idx
     )

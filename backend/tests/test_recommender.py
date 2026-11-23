@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 import torch
 
-from app.core.config import N_CANDIDATES, N_RECOMMENDATIONS, NEWER_BOOST, SEED
+from app.core.config import BLEND_W, N_CANDIDATES, N_RECOMMENDATIONS, NEWER_BOOST, SEED
 from app.repositories.artifacts import Artifacts
 from app.services.recommender import (
     UnknownMovieError,
@@ -12,6 +12,7 @@ from app.services.recommender import (
     match_percents,
     newer_boosts,
     recommend_for_picks,
+    score_bonuses,
     to_movie_indices,
 )
 
@@ -133,3 +134,12 @@ def test_fold_in_from_the_fans_lets_recent_picks_score_high(artifacts: Artifacts
     with torch.no_grad():
         pick_scores = artifacts.model.score_vec(user_vec.expand(len(picks), -1), torch.tensor(picks))
     assert pick_scores.mean().item() > PICK_SCORE_FLOOR
+
+
+def test_score_bonuses_add_the_newer_boost_and_the_popularity_blend() -> None:
+    years = np.array([1980, 2023, 2023])
+    scaled_popularity = np.array([0.0, 0.0, 1.0])
+
+    bonuses = score_bonuses(years, scaled_popularity)
+
+    assert bonuses.tolist() == pytest.approx([0.0, NEWER_BOOST, NEWER_BOOST + BLEND_W])

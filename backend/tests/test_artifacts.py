@@ -32,3 +32,12 @@ def test_franchises_only_list_shown_movies(artifacts: Artifacts) -> None:
 
     assert in_franchises
     assert not in_franchises & artifacts.hidden_idxs
+
+
+def test_scaled_popularity_runs_from_0_to_1_in_rating_count_order(artifacts: Artifacts) -> None:
+    most_rated = int(artifacts.rating_counts.argmax())
+
+    assert artifacts.scaled_popularity.min() >= 0.0
+    assert artifacts.scaled_popularity[most_rated] == 1.0
+    order = artifacts.rating_counts.argsort(kind="stable")
+    assert (artifacts.scaled_popularity[order][1:] >= artifacts.scaled_popularity[order][:-1]).all()

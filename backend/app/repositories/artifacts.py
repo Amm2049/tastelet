@@ -20,6 +20,7 @@ class Artifacts:
     movies_by_idx: list[dict[str, Any]]  # position = model's movie index
     movie_idx_by_id: dict[int, int]  # MovieLens id (used by the API) -> model index
     rating_counts: npt.NDArray[np.float64]  # ratings per movie index in the training data (= popularity)
+    scaled_popularity: npt.NDArray[np.float64]  # log1p(rating count) / its maximum: 0..1 (ADR 0005)
     movie_years: npt.NDArray[np.int64]  # release year per movie index
     movie_idxs_by_collection: dict[int, list[int]]  # TMDB franchise id -> its shown movies' indices (v2)
     hidden_idxs: frozenset[int]  # no poster or no year (v3): never shown in picker, search or results
@@ -62,6 +63,7 @@ def load_artifacts(artifacts_dir: Path) -> Artifacts:
         movies_by_idx=movies_by_idx,
         movie_idx_by_id=movie_idx_by_id,
         rating_counts=rating_counts,
+        scaled_popularity=np.log1p(rating_counts) / np.log1p(rating_counts).max(),  # log tames the skew
         movie_years=np.array([movie["year"] for movie in movies_by_idx], dtype=np.int64),
         movie_idxs_by_collection=movie_idxs_by_collection,
         hidden_idxs=frozenset(hidden_idxs),

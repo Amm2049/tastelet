@@ -69,6 +69,8 @@ no blend 0.159 · **blend w 4: 0.226** · blend w 16: 0.247 · trained embedding
 - Backend (step 7): add `BLEND_W` to `core/config.py`, store per-movie scaled popularity in the artifacts,
   add it in `rank_movies`, with a unit test. The match % (ADR 0003) must use the same blended score for
   the picks so it stays on one scale.
+- Match % (ADR 0003) is computed on the blended score, picks included, so it stays sorted with the list. The blend
+  squeezes it a little: the Marvel user's top 20 go from 77–94% to 86–98%; still at most one 100%.
 - `FRESHNESS_TO_YEAR` (ADR 0004) must become 2023, the last year of the `ml-32m` catalog.
 - ADR 0006 later changed the fold-in start (picks' fans); w = 4 stays (fan start val: w 4 0.232, w 8 0.233).
 - The report should show both numbers (accuracy and variety) and why the highest-scoring `w` was not chosen.

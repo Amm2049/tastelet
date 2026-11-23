@@ -31,6 +31,11 @@ NEWER_BOOST = 0.3
 FRESHNESS_FROM_YEAR = 1980
 FRESHNESS_TO_YEAR = 2023
 
+# Popularity blend (v3, ADR 0005): BLEND_W * log-scaled popularity (0..1) is added to the score. From 5 picks the
+# model alone lost to "most popular" on Hit@10; w = 4 matches it on val while lists stay personal
+# (596 vs 132 different movies per 1,000 users). w = 16 scored best but gave nearly everyone the same list.
+BLEND_W = 4.0
+
 # Results page (v2): genre rows are filled from the top N_CANDIDATES; each movie appears once per page.
 N_CANDIDATES = 100
 N_GENRE_ROWS = 3
