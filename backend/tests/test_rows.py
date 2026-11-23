@@ -4,7 +4,7 @@ import numpy as np
 
 from app.core.config import BROWSE_ROW_SIZE, MIN_ROW_SIZE
 from app.repositories.artifacts import Artifacts
-from app.services.browse import build_browse_rows
+from app.services.browse import build_browse_rows, ratings_per_year
 from app.services.genre_sentence import NOT_A_GENRE
 from app.services.recommender import Recommendation
 from app.services.result_rows import GENRE_CAPTIONS, build_genre_rows
@@ -62,6 +62,23 @@ def test_genre_rows_show_2010s_movies_before_more_rated_2000s_ones() -> None:
     comedy_row = next(row for row in rows if row.key == "comedy")
     years = [comedies[idx - first_comedy]["year"] for idx in comedy_row.movie_idxs]
     assert years == [2012, 2016, 2005, 2006]  # 2010s first, then 2000s; each group by popularity
+
+
+def test_ratings_per_year_counts_the_release_year_as_one_year() -> None:
+    movies = [movie(2023, ["Drama"]), movie(2014, ["Drama"]), movie(2024, ["Drama"])]
+
+    rates = ratings_per_year(movies, np.array([100.0, 100.0, 100.0]))
+
+    assert rates.tolist() == [100.0, 10.0, 100.0]  # 2014-2023 = 10 years; a later date never divides by < 1
+
+
+def test_newer_movie_beats_a_more_rated_older_one_only_per_year() -> None:
+    movies = [movie(2012, ["Horror"]), movie(2022, ["Horror"]), movie(2012, ["Horror"]), movie(2015, ["Horror"])]
+    counts = np.array([1500.0, 300.0, 3000.0, 0.0])  # per year: 125, 150, 250, 0 (4th fills the row's minimum)
+
+    rows = build_browse_rows(movies, counts, frozenset())
+
+    assert rows[0].movie_idxs[:3] == [2, 1, 0]
 
 
 def test_browse_rows_skip_rows_too_short_to_look_like_a_row() -> None:

@@ -17,6 +17,7 @@ from app.core.config import (
     BROWSE_ROW_SIZE,
     GENRE_ROW_FROM_YEAR,
     MIN_ROW_SIZE,
+    RATINGS_LAST_YEAR,
     RECENT_FROM_YEAR,
 )
 
@@ -65,11 +66,20 @@ def _row_specs() -> list[tuple[str, str, MovieFilter, bool]]:
     return specs
 
 
+def ratings_per_year(
+    movies_by_idx: list[dict[str, Any]], rating_counts: npt.NDArray[np.float64]
+) -> npt.NDArray[np.float64]:
+    """Rating count / years the movie could be rated (its release year counts as one)."""
+    years = np.array([movie["year"] for movie in movies_by_idx], dtype=float)
+    years_on_record = np.maximum(RATINGS_LAST_YEAR - years + 1, 1)  # >= 1: no division by zero for a 2024 date
+    return np.asarray(rating_counts / years_on_record, dtype=np.float64)
+
+
 def build_browse_rows(
     movies_by_idx: list[dict[str, Any]], rating_counts: npt.NDArray[np.float64], hidden_idxs: Set[int]
 ) -> list[MovieRow]:
     """Rows of popular matching movies; each movie appears once on the page (first row wins), hidden ones never."""
-    by_popularity = np.argsort(-rating_counts, kind="stable").tolist()
+    by_popularity = np.argsort(-ratings_per_year(movies_by_idx, rating_counts), kind="stable").tolist()
     # Stable sort, so each group keeps its popularity order.
     newer_first = sorted(by_popularity, key=lambda idx: movies_by_idx[idx]["year"] < RECENT_FROM_YEAR)
     shown: set[int] = set(hidden_idxs)  # treated as already shown, so no row takes them

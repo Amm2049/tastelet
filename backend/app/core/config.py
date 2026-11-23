@@ -47,6 +47,9 @@ FRANCHISE_ROW_SIZE = 20  # no minimum: one sequel is still worth showing
 BROWSE_ROW_SIZE = 20
 RECENT_FROM_YEAR = 2010
 GENRE_ROW_FROM_YEAR = 2000
+# Rows rank by ratings per year since release (v3): ml-32m ends in 2023, so a 2021 movie had ~3 years to collect
+# ratings and a 2012 one ~12; by total ratings almost no 2020+ movie made a row.
+RATINGS_LAST_YEAR = 2023
 # One row per genre, titled with the genre's name, in this order.
 BROWSE_GENRES = [
     "Action",
