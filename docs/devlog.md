@@ -2,6 +2,20 @@
 
 One entry per work session: yesterday / today / blockers. Newest first.
 
+## 2026-11-23
+- Yesterday: v3 steps 1–4 on Colab (ml-32m, MIN_RATINGS 20, per-user time split, GPU training; val Hit@10 0.2442).
+- Today: v3 step 5 evaluation. Test Hit@10 NCF 0.2162 vs popularity 0.1934. Cold start (5 picks) lost to
+  popularity (0.159 vs 0.211); ruled out fold-in settings, pick choice and the newer boost one by one.
+  Fix: blend scaled popularity into the cold-start score, w = 4 chosen on val + list variety (ADR 0005):
+  test 0.226, 596 different movies vs popularity's 132.
+- Then: hand-made lists were wrong (Marvel fan got Fight Club). Ruled out split, blend, dead ReLUs and the
+  model itself; cause = fold-in starting at the average user can't move. Fix: start from the picks' fans
+  (ADR 0006): Marvel fan gets Marvel; test Hit@10 unchanged (0.224), variety 596 -> 997 movies.
+- Learned: a measurable symptom (low pick scores) is not always the cause; Hit@10 can be won by giving
+  everyone the popular list, so always check variety too; tune on val, test once (the fan-start val gain
+  of +0.033 did not hold on test); look at real lists, they caught what Hit@10 hid.
+- Blockers: Colab notebooks `v3_01_explore`, `v3_02_train` are not in the repo yet.
+
 ## 2026-11-22
 - Today: started v2 in a git worktree (`tastelet-v2`, branch `v2`, local only). Billy found "too many old
   movies" in the results. Reproduced with three pick sets: the model follows the picks' era. Real cause:
