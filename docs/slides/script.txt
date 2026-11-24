@@ -1,0 +1,85 @@
+TASTELET: PRESENTATION SCRIPT (5 MINUTES INCLUDING DEMO)
+
+Talk about 2:40, demo about 1:15, buffer about 1:00.
+Before the talk: open https://tastelet.vercel.app 5 minutes early so the free backend is awake,
+and keep the tab ready next to the slides.
+
+1. TITLE (0:10)
+
+Hi, this is Tastelet. You pick five movies you love, and a neural network gives you
+a taste persona and twenty recommendations.
+
+2. THE COLD-START PROBLEM (0:25)
+
+The model learned from two hundred thousand MovieLens users. But a visitor has no
+account and no ratings, so the model knows nothing about them. That's the cold-start problem.
+So we ask for five to ten favourite movies instead.
+
+3. WHY NCF (0:25)
+
+Popularity gives everyone the same list. Content-based only sees genres.
+Neural collaborative filtering learns real taste, and adds a new user without retraining.
+The trade-off: a movie with no ratings can't be recommended.
+
+4. DATA AND TRAINING (0:20)
+
+We trained on MovieLens: 32 million ratings. Each user's older ratings train the model,
+the newer ones test it, so it never sees the future.
+
+5. FROM PICKS TO PERSONA (0:30)
+
+When you press the button: we freeze the model and learn a vector just for you,
+starting from people who love your picks. Then we rank all movies,
+and your nearest of seven clusters gives your persona.
+
+6. HIT@10 HID PROBLEMS (0:35)
+
+Hit@10 asks: is a movie the user really liked in our top ten?
+We beat popularity, and give far more personal lists: 997 different movies against 132.
+But the score hid two problems: the plain model lost to popularity, and a Marvel fan got Fight Club.
+So: one metric isn't enough. Look at real lists.
+
+DEMO (1:15)  -- switch to the browser tab
+
+Let me show you. I'll search and pick five Marvel movies.
+(Search words, click the poster each time; the counter ends at 5/10:
+ "infinity war" -> Avengers: Infinity War - Part I
+ "black panther" -> Black Panther
+ "ragnarok" -> Thor: Ragnarok (2nd result)
+ "guardians" -> Guardians of the Galaxy
+ "spider-verse" -> Spider-Man: Into the Spider-Verse)
+See my results... I'm "The Blockbuster Hero". My top match is Infinity War Part II, that's Endgame:
+MovieLens calls it that. Then Deadpool, Doctor Strange.
+(Scroll to "More from your franchises".) It also finds more from the franchises I picked.
+-- switch back to the slides
+
+7. TRY IT (0:10)
+
+You can try it too: scan the code. Next step would be recommending brand-new releases.
+Thank you. Any questions?
+
+------------------------------------------------------------
+
+DEMO BACKUP
+If the site is slow or down: show slide 2 (the screenshots) and say what happens there.
+Careful: "infinity" alone finds Infinity (1996) first and "spider" alone finds Spider-Man (2002) first;
+use the full search words above. Checked on the live site 2026-11-24: these 5 picks give The Blockbuster
+Hero; top 5 = Infinity War Part II (Endgame), Deadpool, Guardians 2, Doctor Strange, Deadpool 2.
+
+LIKELY QUESTIONS (not part of the 5 minutes)
+
+- Why not just use popularity, if it's that close? Popularity gives all 1,000 users nearly the same
+  list (132 different movies). NCF matches it on Hit@10 and gives each user their own list (997).
+- Why not item-KNN? On the small v1 data item-KNN had a better Hit@10 (0.54 vs 0.47), but it gives no
+  user vectors, so no fold-in for new users and no personas.
+- What is Hit@10? For each test user: is at least one movie they really liked next in our top 10?
+  The score is the share of users where it is (0.224 = 22.4% of users).
+- What is fold-in? Keep all trained weights fixed and train only one new user vector (100 steps)
+  so the picks get high scores. It takes about a second, no retraining.
+- Why a time split? It copies real use: predict what someone likes next from what they liked before.
+  A random split lets the model see "future" ratings and makes results look better than they are.
+- Why 7 personas? K = 7 was the only value from 6 to 10 where no two clusters shared 2 of their top 3
+  genres (no look-alike personas).
+- Why can't it recommend new movies? NCF learns a vector for a movie from its ratings. A movie with
+  no ratings has no vector (item cold start).
+- Is my data stored? No. Picks are never stored or logged.

@@ -9,6 +9,13 @@ One entry per work session: yesterday / today / blockers. Newest first.
   v2/v3 worktrees; tagged v3.0.
 - Learned: measure memory before deploying to a small server (v3 peaks at ~401 MB of Render's 512 MB).
 - Blockers: none. Next: presentation slides.
+- Then (#28, #31): `docs/overview.md`, a 2-page map of v3 for later review (PR #30). "Cinematic glass" restyle:
+  row arrows moved into the heading (they covered posters), translucent borders, red page glow, glass pick bar
+  and search (PR #32, #33). Glass hero/persona and sharper cards were tried in the browser and dropped: less
+  glass suits the app. Slides: 7-slide deck for a 5-minute talk + speaker script in `docs/slides/`; built as .pptx
+  (Canva's AI tools are disabled on the team) with borderless dark + red cards, to import into Canva by hand.
+- Learned: do contrast maths before picking a glass opacity (0.55 failed 4.5:1 over a white poster, 0.85 passes);
+  order work by dependencies (UI before screenshots before slides); check `main` before rebasing on "merged".
 
 ## 2026-11-23
 - Yesterday: v3 steps 1–4 on Colab (ml-32m, MIN_RATINGS 20, per-user time split, GPU training; val Hit@10 0.2442).

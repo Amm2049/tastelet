@@ -98,6 +98,7 @@ backend/artifacts/  ncf_model.pt, centroids.json, personas.json, movies_meta.jso
 frontend/src/       App, components/ (MovieRow, HeroMatch, …), api.js, picks.js, useMovieSearch.js
 results/            results.csv, figures/
 docs/               overview.md (how it all works) · adr/ · devlog.md
+                    slides/ (tastelet-slides.pptx, script.txt, app screenshots)
 ```
 
 ## Credits
