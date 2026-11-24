@@ -9,7 +9,8 @@ sentence and 10–20 recommended movies with match scores. No accounts, no datab
 
 Sources of truth: the v1 spec, plan and proposal PDFs were removed as outdated (2026-11-24); they are in git at
 tag `v3.0` (`git show v3.0:docs/scope-and-specification.pdf > spec.pdf`). v3 sources: `docs/overview.md` (how it all works), README.md, `docs/adr/` (every decision since)
-and `docs/devlog.md`. Slides: issue #28.
+and `docs/devlog.md`. Slides + speaker script: `docs/slides/` (the .pptx is also imported into Canva; Canva's AI
+design tools are disabled on Billy's team, so decks are built as .pptx and imported by hand).
 
 Scope is frozen. New ideas go to a "Later" list in an issue, never into the build.
 
@@ -50,7 +51,7 @@ backend/
                    # movie_rating_counts.json (committed; written by notebook 04)
   tests/           # pytest: unit + FastAPI TestClient
 frontend/          # Vite + React (JavaScript); src/components, api.js, picks.js; Vitest
-docs/              # v3 docs + slides go here (issue #28)
+docs/              # overview.md (how it all works), slides/ (deck, speaker script, screenshots)
   adr/             # architecture decision records
 docs/devlog.md     # short note per session
 render.yaml        # Render blueprint for the backend (frontend goes on Vercel)

@@ -1,0 +1,80 @@
+TASTELET: PRESENTATION SCRIPT (5 MINUTES)
+
+About 130 words per minute. Times are a guide; the total is about 5:00.
+Before the talk: open https://tastelet.vercel.app 5 minutes early so the free backend is awake.
+
+1. TITLE (0:20)
+
+Hi, this is Tastelet, a movie recommender. You pick five to ten movies you love, and a neural network
+gives you a taste persona and twenty recommendations. The interesting part: it works for someone the
+model has never seen before.
+
+2. THE COLD-START PROBLEM (0:40)
+
+The model learned taste from about two hundred thousand MovieLens users and their past ratings.
+But a visitor to our app is not one of them. There are no accounts and no past ratings, so the model
+knows nothing about them. That's the cold-start problem.
+So instead, we ask for five to ten favourite movies, and return a persona, a genre sentence and
+twenty matches. Here you see the picker, and the results page.
+
+3. WHY NCF (0:45)
+
+We compared three approaches. Popularity is simple and surprisingly strong, but everyone gets the
+same list, so it's our baseline. Content-based models can handle new movies, but they only see
+genres, not taste.
+We chose neural collaborative filtering. It learns taste from thirty-two million ratings, and a new
+user can be added without retraining. Its user vectors also give us the personas.
+The trade-off: it can't recommend a movie that has no ratings yet.
+
+4. DATA AND TRAINING (0:40)
+
+We trained on MovieLens 32M: twenty-three thousand movies and two hundred thousand users, with
+ratings up to 2023.
+We split by time for each user: their oldest ratings train the model, their newest ones test it,
+so the model never peeks at the future.
+The model gives every user and every movie a vector of 32 numbers, and a small neural network turns
+a pair into a score. We measure Hit@10 against the popularity baseline.
+
+5. FROM PICKS TO PERSONA (0:45)
+
+Here's what happens when you press "See my results".
+One, fold-in: we freeze the trained model and learn only a vector for you, so your picks score high.
+Two, we start that search from the people who love your picks, not from the average user.
+Three, we rank all movies, with a small popularity blend and a boost for newer movies.
+Four, your vector's nearest of seven K-means clusters gives your persona.
+Same picks always give the same result, in about one second.
+
+6. HIT@10 HID PROBLEMS (0:55)
+
+On a thousand test users with five picks, NCF scores 0.224 Hit@10, against 0.211 for popularity.
+And the lists are far more personal: 997 different movies across all users, against 132.
+But Hit@10 hid two problems. First, the plain model actually lost to popularity, at 0.159. A small
+popularity blend fixed that.
+Second, a Marvel fan got Fight Club. Hit@10 didn't show this at all; we only caught it by looking at
+real lists. Starting from the picks' fans fixed it.
+The lesson: check variety and real lists, not just one metric.
+
+7. TRY IT (0:15)
+
+You can try it now: scan the code or open tastelet.vercel.app.
+Next, a content-based model could recommend brand-new releases. Thank you. Any questions?
+
+------------------------------------------------------------
+
+LIKELY QUESTIONS
+
+- Why not just use popularity, if it's that close? Popularity gives all 1,000 users nearly the same
+  list (132 different movies). NCF matches it on Hit@10 and gives each user their own list (997).
+- Why not item-KNN? On the small v1 data item-KNN had a better Hit@10 (0.54 vs 0.47), but it gives no
+  user vectors, so no fold-in for new users and no personas.
+- What is Hit@10? For each test user: is at least one movie they really liked next in our top 10?
+  The score is the share of users where it is.
+- What is fold-in? Keep all trained weights fixed and train only one new user vector (100 steps)
+  so the picks get high scores. It takes about a second, no retraining.
+- Why a time split? It copies real use: predict what someone likes next from what they liked before.
+  A random split lets the model see "future" ratings and makes results look better than they are.
+- Why 7 personas? K = 7 was the only value from 6 to 10 where no two clusters shared 2 of their top 3 genres
+  (no look-alike personas).
+- Why can't it recommend new movies? NCF learns a vector for a movie from its ratings. A movie with
+  no ratings has no vector (item cold start).
+- Is my data stored? No. Picks are never stored or logged.
