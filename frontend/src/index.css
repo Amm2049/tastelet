@@ -15,7 +15,12 @@
   --overlay-soft: rgba(17, 16, 20, 0.6);
   --glow: rgba(232, 17, 45, 0.16); /* the accent, faint: page glow for glass panels to frost */
   --glass: rgba(17, 16, 20, 0.55); /* only on things that float over posters, never on the cards themselves */
+  /* Glass that carries text over posters: at 0.85, muted text keeps 5:1 contrast even over a white poster
+     (at 0.55 it drops to ~3.5:1). */
+  --glass-strong: rgba(17, 16, 20, 0.85);
   --glass-edge: rgba(255, 255, 255, 0.18);
+  --glass-blur: blur(16px) saturate(140%); /* saturate keeps the poster colours lively through the frost */
+  --focus-ring: 0 0 0 3px rgba(255, 59, 79, 0.45); /* --selected, softened */
   --radius: 6px;
   --gutter: 16px;
 
@@ -99,16 +104,20 @@ button:focus-visible {
   max-width: 480px;
   margin: 1rem 0 0.5rem;
   padding: 12px 16px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--glass-edge);
   border-radius: var(--radius);
-  background: var(--surface);
+  background: var(--glass);
   color: var(--text);
   font: inherit;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
 }
 
 .search:focus-visible {
-  outline: 3px solid var(--selected);
-  outline-offset: 2px;
+  outline: none; /* replaced by the glow ring below, still clearly visible */
+  border-color: var(--selected);
+  box-shadow: var(--focus-ring);
 }
 
 .search-note {
@@ -353,9 +362,9 @@ button:focus-visible {
   gap: 12px;
   margin: 2rem calc(-1 * var(--gutter)) 0;
   padding: 12px var(--gutter);
-  background: var(--overlay);
-  border-top: 1px solid var(--border);
-  backdrop-filter: blur(6px);
+  background: var(--glass-strong);
+  border-top: 1px solid var(--glass-edge);
+  backdrop-filter: var(--glass-blur);
 }
 
 .pick-status {
