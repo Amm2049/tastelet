@@ -8,8 +8,8 @@ The user picks 5–10 favorite movies → the app returns a taste persona, a fav
 sentence and 10–20 recommended movies with match scores. No accounts, no database.
 
 Sources of truth: the v1 spec, plan and proposal PDFs were removed as outdated (2026-11-24); they are in git at
-tag `v3.0` (`git show v3.0:docs/scope-and-specification.pdf > spec.pdf`). New v3 docs + slides: issue #28.
-Until then: README.md, `docs/adr/` (every decision since) and `docs/devlog.md`.
+tag `v3.0` (`git show v3.0:docs/scope-and-specification.pdf > spec.pdf`). v3 sources: `docs/overview.md` (how it all works), README.md, `docs/adr/` (every decision since)
+and `docs/devlog.md`. Slides: issue #28.
 
 Scope is frozen. New ideas go to a "Later" list in an issue, never into the build.
 
