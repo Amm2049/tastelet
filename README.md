@@ -97,7 +97,7 @@ backend/app/        api (routes) → services (fold-in, ranking, persona, genre 
 backend/artifacts/  ncf_model.pt, centroids.json, personas.json, movies_meta.json, … (made by notebook 04)
 frontend/src/       App, components/ (MovieRow, HeroMatch, …), api.js, picks.js, useMovieSearch.js
 results/            results.csv, figures/
-docs/               adr/ · devlog.md (v3 docs + slides: issue #28)
+docs/               overview.md (how it all works) · adr/ · devlog.md
 ```
 
 ## Credits
