@@ -2,7 +2,7 @@
   /* Dark + vibrant red theme. Every colour lives here, so a new theme only changes this block. */
   --bg: #111014;
   --surface: #1c1b22;
-  --border: #2c2a33;
+  --border: rgba(255, 255, 255, 0.08); /* translucent, so edges pick up what's behind them (glass look) */
   --text: #f3f1f6;
   --muted: #a9a6b3;
   --accent: #e8112d; /* buttons + logo; white text on it passes contrast (4.6:1) */
@@ -13,7 +13,10 @@
   --error: #ff8a8f;
   --overlay: rgba(17, 16, 20, 0.92);
   --overlay-soft: rgba(17, 16, 20, 0.6);
-  --radius: 8px;
+  --glow: rgba(232, 17, 45, 0.16); /* the accent, faint: page glow for glass panels to frost */
+  --glass: rgba(17, 16, 20, 0.55); /* only on things that float over posters, never on the cards themselves */
+  --glass-edge: rgba(255, 255, 255, 0.18);
+  --radius: 6px;
   --gutter: 16px;
 
   color-scheme: dark;
@@ -34,7 +37,9 @@
 
 body {
   margin: 0;
-  background: var(--bg);
+  background:
+    radial-gradient(ellipse 80% 40% at 50% 0%, var(--glow), transparent 70%) fixed,
+    var(--bg);
 }
 
 h1,
@@ -114,6 +119,10 @@ button:focus-visible {
 /* ---------- Netflix-style rows ---------- */
 
 .row-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
   margin: 2rem 0 0.75rem;
 }
 
@@ -126,10 +135,6 @@ button:focus-visible {
   margin: 0.15rem 0 0;
   color: var(--muted);
   font-size: 0.9rem;
-}
-
-.row-body {
-  position: relative;
 }
 
 .row-track {
@@ -150,37 +155,36 @@ button:focus-visible {
   scroll-snap-align: start;
 }
 
+.row-arrows {
+  display: flex;
+  flex-shrink: 0;
+  gap: 8px;
+}
+
 .row-arrow {
-  position: absolute;
-  top: 0;
-  bottom: 3.5rem; /* stop above the caption, so the arrow covers only the posters */
-  z-index: 1;
-  width: 40px;
-  border: none;
-  font-size: 2rem;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  padding: 0 0 3px; /* the ‹ › glyphs sit low in their line box */
+  border: 1px solid var(--glass-edge);
+  border-radius: 50%;
+  font-size: 1.5rem;
+  line-height: 1;
   color: var(--text);
-  background: var(--overlay);
-  opacity: 0;
-  transition: opacity 0.15s;
+  background: var(--glass);
+  transition:
+    background-color 0.15s,
+    border-color 0.15s;
 }
 
-.row-arrow.left {
-  left: 0;
-  border-radius: var(--radius) 0 0 var(--radius);
-}
-
-.row-arrow.right {
-  right: 0;
-  border-radius: 0 var(--radius) var(--radius) 0;
-}
-
-.row-body:hover .row-arrow,
-.row-arrow:focus-visible {
-  opacity: 1;
+.row-arrow:hover {
+  background: var(--accent);
+  border-color: var(--accent);
 }
 
 @media (hover: none) {
-  .row-arrow {
+  .row-arrows {
     display: none; /* touch screens swipe instead */
   }
 }
